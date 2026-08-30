@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2.2 文档切分策略 · 学习笔记</title>
+<style>
+:root{
+  --bg:#0d1117; --panel:#161b22; --panel2:#1c2230; --line:#2d333b;
+  --text:#e6edf3; --muted:#8b949e;
+  --blue:#58a6ff; --green:#3fb950; --orange:#d29922; --red:#f85149;
+  --purple:#bc8cff; --cyan:#39c5cf;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--text);
+  font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;
+  line-height:1.75; padding:32px 20px 80px;
+}
+.wrap{max-width:920px;margin:0 auto}
+header{
+  border-bottom:2px solid var(--line); padding-bottom:20px; margin-bottom:32px;
+}
+.tag{
+  display:inline-block; background:rgba(88,166,255,.12); color:var(--blue);
+  border:1px solid rgba(88,166,255,.3); border-radius:20px;
+  padding:3px 14px; font-size:12px; letter-spacing:1px; margin-bottom:12px;
+}
+h1{font-size:27px; margin-bottom:10px}
+.sub{color:var(--muted); font-size:14px}
+h2{
+  font-size:20px; margin:38px 0 16px; padding-left:12px;
+  border-left:4px solid var(--blue);
+}
+h3{font-size:16px; margin:22px 0 10px; color:var(--cyan)}
+p{margin-bottom:12px}
+.muted{color:var(--muted); font-size:14px}
+.key{color:var(--orange); font-weight:600}
+.key-g{color:var(--green); font-weight:600}
+.key-r{color:var(--red); font-weight:600}
+
+.quote{
+  background:linear-gradient(90deg,rgba(88,166,255,.10),transparent);
+  border-left:4px solid var(--blue); border-radius:0 8px 8px 0;
+  padding:16px 20px; margin:18px 0; font-size:15px;
+}
+.card{
+  background:var(--panel); border:1px solid var(--line);
+  border-radius:10px; padding:20px; margin:16px 0;
+}
+.card.ok{border-color:rgba(63,185,80,.4); background:rgba(63,185,80,.05)}
+
+table{width:100%; border-collapse:collapse; margin:14px 0; font-size:14px}
+th,td{border:1px solid var(--line); padding:9px 12px; text-align:left}
+th{background:var(--panel2); color:var(--blue); font-weight:600}
+td{background:var(--panel)}
+
+pre{
+  background:#010409; border:1px solid var(--line); border-radius:8px;
+  padding:16px; overflow-x:auto; margin:14px 0;
+  font-family:Consolas,"Courier New",monospace; font-size:13px; line-height:1.6;
+}
+code{
+  background:rgba(110,118,129,.25); border-radius:4px;
+  padding:2px 6px; font-size:13px; font-family:Consolas,monospace;
+}
+pre code{background:none; padding:0}
+
+/* 切分对比卡 */
+.split-demo{
+  display:flex; gap:16px; flex-wrap:wrap; margin:16px 0;
+}
+.split-item{
+  flex:1; min-width:300px; background:var(--panel);
+  border:1px solid var(--line); border-radius:8px; padding:16px;
+}
+.split-item .hd{font-size:13px; color:var(--muted); margin-bottom:10px}
+.split-item .chunk{
+  font-family:Consolas,monospace; font-size:12px; line-height:1.8;
+  background:#010409; border:1px solid var(--line); border-radius:6px;
+  padding:10px; margin:6px 0;
+}
+.hl{color:var(--orange); font-weight:600}
+
+/* 步长公式 */
+.formula{
+  background:var(--panel); border:1px solid var(--line);
+  border-radius:8px; padding:18px; margin:14px 0;
+  text-align:center; font-family:Consolas,monospace; font-size:16px;
+}
+.formula .bad{color:var(--red); text-decoration:line-through}
+.formula .good{color:var(--green)}
+
+/* 踩坑 */
+.pitfall{
+  background:var(--panel); border-left:4px solid var(--red);
+  border-radius:0 8px 8px 0; padding:14px 18px; margin:12px 0;
+}
+.pitfall .n{color:var(--red); font-weight:700; font-size:13px}
+.pitfall .c{font-size:14px; margin-top:6px}
+
+ul{margin:10px 0 10px 22px}
+li{margin-bottom:6px; font-size:14px}
+
+footer{
+  margin-top:48px; padding-top:20px; border-top:1px solid var(--line);
+  color:var(--muted); font-size:13px; text-align:center;
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="tag">阶段二 · 任务 2.2</div>
+  <h1>文档切分策略</h1>
+  <p class="sub">固定长度 + 重叠窗口 —— RAG 的第二环</p>
+</header>
+
+<h2>一、一句话总结</h2>
+<div class="quote">
+  <strong>把长文档切成小块（chunk），每块单独向量化、单独检索</strong>，让检索精准命中"讲求根公式的那一小段"，而不是返回"整本书相关"。<br>
+  核心技巧：<strong class="key">重叠窗口</strong> —— 相邻块留部分重叠，边界附近的关键信息不因一刀切而丢失。
+</div>
+
+<h2>二、为什么要切分？（两个原因）</h2>
+<table>
+  <tr><th>原因</th><th>说明</th></tr>
+  <tr><td>向量化有长度限制</td><td>embedding 模型一次只能处理几百到几千字，超长文本塞不进去</td></tr>
+  <tr><td>检索颗粒度太粗</td><td>问"求根公式是什么"，返回"整本书的向量"只能定位到书，定位不到段落</td></tr>
+</table>
+<p class="muted">类比：把厚书拆成"卡片"，每张一个知识点。查资料直接抽"求根公式"那张卡，不用抱整本书。</p>
+
+<h2>三、三种切分策略</h2>
+<table>
+  <tr><th>策略</th><th>怎么做</th><th>优点</th><th>缺点</th></tr>
+  <tr><td>固定长度</td><td>按固定字符数切（每 50 字一块）</td><td>简单</td><td><span class="key-r">可能在句子中间切断</span></td></tr>
+  <tr><td>按段落/标题</td><td>按文档天然结构切</td><td>保留语义完整</td><td>依赖文档格式规整</td></tr>
+  <tr><td><strong>语义切分 + 重叠窗口</strong></td><td>按语义找切分点，相邻块留重叠</td><td><span class="key-g">最准、不丢信息</span></td><td>最复杂</td></tr>
+</table>
+
+<h2>四、重叠窗口（核心技巧）</h2>
+<h3>痛点：一刀切会把词切成两半</h3>
+<p>固定长度切分，可能正好把"<strong>二次方程</strong>"切成"二次方"+"程"——两个 chunk 都不完整，谁也匹配不上。</p>
+
+<h3>解法：让相邻块有部分重叠</h3>
+<div class="split-demo">
+  <div class="split-item">
+    <div class="hd">块0（末尾）</div>
+    <div class="chunk">…它允许模型并行地捕捉序列中<span class="hl">的核心是自注意力机制</span></div>
+    <div class="hd">块1（开头，与块0 重叠 10 字）</div>
+    <div class="chunk"><span class="hl">的核心是自注意力机制</span>，它允许模型并行地捕捉序列中…</div>
+  </div>
+</div>
+<p class="muted">边界附近的关键信息（<span class="hl">橙色部分</span>）在两个块里都完整存在 → 检索时不会漏。</p>
+
+<h3>实现的关键一行：步长</h3>
+<div class="formula">
+  步长 = chunk_size - overlap<br>
+  <span class="bad">start += chunk_size</span>（无重叠）&nbsp;&nbsp;→&nbsp;&nbsp;<span class="good">start += chunk_size - overlap</span>（重叠）
+</div>
+<p class="muted">代价是存储冗余（重叠部分存两遍），换来检索不丢信息 —— RAG 里很划算。</p>
+
+<h2>五、边界条件（off-by-one 陷阱）</h2>
+<table>
+  <tr><th>写法</th><th>结果</th></tr>
+  <tr><td><code>while start &lt; len(text)</code></td><td><span class="key-g">✅ 正确</span>：start 还没到末尾就继续</td></tr>
+  <tr><td><code>while start &lt;= len(text)</code></td><td><span class="key-r">❌ 错误</span>：start 顶到末尾还切，多出一块空字符串</td></tr>
+</table>
+<div class="card ok">
+  <strong class="key-g">反例验证</strong>：text 长 100、步长 50 → <code>&lt;=</code> 切出 <code>[50, 50, 0]</code>（多空块），<code>&lt;</code> 正确得 <code>[50, 50]</code>。
+</div>
+
+<h2>六、代码段</h2>
+<pre><code>def chunk_text(text, chunk_size, overlap):
+    chunks = []
+    start = 0
+    while start &lt; len(text):                # 边界：start 还没到末尾
+        chunks.append(text[start:start+chunk_size])
+        start += (chunk_size - overlap)     # 关键：步长 = 块长 - 重叠
+    return chunks
+
+# 每块 50 字，重叠 10 字
+chunks = chunk_text(text, chunk_size=50, overlap=10)</code></pre>
+
+<h3>运行结果</h3>
+<pre><code>共切出 5 块：
+
+[块0] (长度50): 大语言模型是基于Transformer架构的深度学习模型。Transformer的核心是自注意力机制，它允许模型并行地捕捉序列中
+[块1] (长度50): 的核心是自注意力机制，它允许模型并行地捕捉序列中任意两个位置之间的依赖关系。与传统的循环神经网络相比，
+[块2] (长度50): 与传统的循环神经网络相比，Transformer能够更好地处理长距离依赖，因此成为现代大语言模型的
+[块3] (长度50): 依赖，因此成为现代大语言模型的基础架构。在此基础上，GPT等生成式模型通过海量语料的预训练，
+[块4] (长度24): 基础架构。在此基础上，GPT等生成式模型通过海量语料的预训练，学会了预测下一个词，展现出强大的语言理解和生成能力。</code></pre>
+<p class="muted">注意块0 末尾和块1 开头有 10 个字重叠 —— 重叠窗口生效的证据。</p>
+
+<h2>七、踩坑记录</h2>
+<div class="pitfall">
+  <div class="n">#61 · 切分循环用了 &lt;= 而不是 &lt;</div>
+  <div class="c">
+    当 text 长度被步长整除时，<code>start == len(text)</code> 会切片出空字符串多一块（反例：100 字/步长 50 → [50,50,0]，应为 [50,50]）。<br>
+    <span class="key-g">规律</span>：边界条件用"还没越界"的 <code>&lt;</code>，不是"允许刚好越界"的 <code>&lt;=</code>。
+  </div>
+</div>
+
+<h2>八、RAG 四步全景（本任务位置）</h2>
+<pre><code>2.1 向量化（文字→向量）   → embedding，词袋模型/神经网络
+2.2 切分（长文档→小块）   → chunk，重叠窗口   ← 本任务
+2.3 检索（存向量+粗召回）  → Chroma，add/query
+2.4 重排序（精排）        → LLM rerank，纠正粗筛</code></pre>
+
+<h2>九、自测清单</h2>
+<ul>
+  <li>能说出为什么要切分（长度限制 + 检索精度）</li>
+  <li>能说出为什么需要重叠窗口（边界不丢信息）</li>
+  <li>能说出<strong>步长 = chunk_size - overlap</strong></li>
+  <li>能说出 <code>while start &lt; len(text)</code> 为什么用 <code>&lt;</code> 而不是 <code>&lt;=</code></li>
+  <li>能在 Chroma 之前把长文本正确切成带重叠的 chunk</li>
+</ul>
+
+<footer>2.2 文档切分策略 · 学习笔记 · 2026-08-30 补录</footer>
+
+</div>
+</body>
+</html>
