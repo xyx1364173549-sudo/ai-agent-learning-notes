@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Checkpointer 与人机协同 · 学习笔记</title>
+<style>
+  :root {
+    --bg: #1a1b26; --card: #24283b; --card2: #2f334d;
+    --text: #c0caf5; --muted: #7982a9;
+    --blue: #7aa2f7; --purple: #bb9af7; --green: #9ece6a;
+    --orange: #e0af68; --red: #f7768e; --cyan: #7dcfff;
+    --code-bg: #16161e; --border: #3b4261;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, "Microsoft YaHei", "PingFang SC", sans-serif; line-height: 1.7; padding: 32px 20px 60px; }
+  .wrap { max-width: 880px; margin: 0 auto; }
+  h1 { font-size: 28px; font-weight: 600; color: var(--blue); margin-bottom: 8px; }
+  .subtitle { color: var(--muted); font-size: 14px; margin-bottom: 32px; }
+  h2 { font-size: 20px; font-weight: 600; margin: 36px 0 14px; padding-left: 12px; border-left: 4px solid var(--blue); }
+  h3 { font-size: 15px; font-weight: 600; margin: 16px 0 6px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px 22px; margin: 14px 0; }
+  .card.blue { border-left: 4px solid var(--blue); }
+  .card.purple { border-left: 4px solid var(--purple); }
+  .card.green { border-left: 4px solid var(--green); }
+  .card.orange { border-left: 4px solid var(--orange); }
+  .desc { color: var(--text); font-size: 14px; margin: 6px 0; }
+  .key { color: var(--cyan); font-weight: 600; }
+  pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 10px; padding: 14px; overflow-x: auto; font-family: "JetBrains Mono", "Fira Code", Consolas, monospace; font-size: 13px; line-height: 1.6; margin: 10px 0; }
+  code { font-family: "JetBrains Mono", "Fira Code", Consolas, monospace; }
+  .cmt { color: #565f89; } .str { color: var(--green); } .kw { color: var(--purple); } .fn { color: var(--blue); }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 14px; }
+  th, td { border: 1px solid var(--border); padding: 9px 12px; text-align: left; }
+  th { background: var(--card2); color: var(--blue); font-weight: 600; }
+  .muted { color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>Checkpointer 与人机协同</h1>
+  <div class="subtitle">任务 1.4 · 学习笔记 · 2026-08-24 · 前置：LangGraph 状态图 + 条件边</div>
+
+  <div class="card orange">
+    <p><strong>一句话总结：</strong>Checkpointer 让流水线"记住"状态；人机协同（interrupt_before）让流水线在关键节点暂停，等人工确认后继续。两者配合实现"断点续传"。</p>
+  </div>
+
+  <h2>一、状态持久化</h2>
+
+  <div class="card blue">
+    <h3><span style="color:var(--blue)">① Checkpointer</span> —— 档案柜</h3>
+    <p class="desc">默认每次 invoke 独立运行（失忆）。挂上 Checkpointer 后，状态被存下来，下次能续上。</p>
+<pre><code><span class="kw">from</span> langgraph.checkpoint.memory <span class="kw">import</span> MemorySaver
+
+memory = MemorySaver()                        <span class="cmt"># 档案柜（内存版）</span>
+app = graph.compile(checkpointer=memory)      <span class="cmt"># 编译时挂上</span></code></pre>
+  </div>
+
+  <div class="card purple">
+    <h3><span style="color:var(--purple)">② thread_id</span> —— 档案编号</h3>
+    <p class="desc">同一 thread_id 连续 invoke 共享状态，不同 thread_id 互相独立。</p>
+<pre><code>config = {<span class="str">"configurable"</span>: {<span class="str">"thread_id"</span>: <span class="str">"会话1"</span>}}</code></pre>
+    <p class="muted" style="font-size:13px;">字典套字典 = 给配置分类（config=容器，configurable=用户自定义类，thread_id=具体一项）</p>
+  </div>
+
+  <div class="card green">
+    <h3><span style="color:var(--green)">③ 多轮 invoke 续状态</span> —— 记忆的活证据</h3>
+<pre><code>r1 = app.invoke({}, config)   <span class="cmt"># counter=1</span>
+r2 = app.invoke({}, config)   <span class="cmt"># counter=2（记得1）</span>
+r3 = app.invoke({}, config)   <span class="cmt"># counter=3（记得2）</span></code></pre>
+    <p class="muted" style="font-size:13px;">没有 Checkpointer 时输出 1、1、1（失忆）</p>
+  </div>
+
+  <h2>二、人机协同</h2>
+
+  <div class="card orange">
+    <h3><span style="color:var(--orange)">④ interrupt_before</span> —— 质检关卡</h3>
+    <p class="desc">在指定节点前设质检关卡，跑到就暂停，把状态交人工检查。</p>
+<pre><code>app = graph.compile(checkpointer=memory, interrupt_before=[<span class="str">"human_review"</span>])</code></pre>
+  </div>
+
+  <div class="card red">
+    <h3><span style="color:var(--red)">⑤ 断点续传</span> —— 暂停后恢复</h3>
+<pre><code>result1 = app.invoke({<span class="str">"topic"</span>: <span class="str">"递归"</span>}, config)
+<span class="cmt"># 暂停：{'topic': '递归', 'lesson': '...'}   ← 无 approved</span>
+
+result2 = app.invoke(None, config)
+<span class="cmt"># 继续：{'topic': '递归', 'lesson': '...', 'approved': True}</span></code></pre>
+    <p class="muted" style="font-size:13px;">None = 继续上次没跑完的；暂停时前面节点已执行（有 lesson），后面没执行（无 approved）</p>
+  </div>
+
+  <div class="card green">
+    <h3><span style="color:var(--green)">⑥ MemorySaver vs SqliteSaver</span> —— 对应论文分层记忆</h3>
+    <table>
+      <tr><th></th><th>MemorySaver</th><th>SqliteSaver</th></tr>
+      <tr><td>存哪</td><td>内存</td><td>SQLite 文件</td></tr>
+      <tr><td>重启后</td><td>丢</td><td>还在</td></tr>
+      <tr><td>对应论文</td><td>工作记忆</td><td>情景记忆（第4章）</td></tr>
+    </table>
+  </div>
+
+  <h2>三、自测清单</h2>
+  <div class="card">
+    <ul style="padding-left:20px; line-height:2;">
+      <li>Checkpointer 的类比是什么？</li>
+      <li>thread_id 的作用？</li>
+      <li>没有 Checkpointer 时连续 invoke({}) 输出什么？</li>
+      <li>interrupt_before 的作用？</li>
+      <li>第 2 次 invoke 为什么传 None？</li>
+      <li>MemorySaver 和 SqliteSaver 对应论文哪两层记忆？</li>
+    </ul>
+  </div>
+
+  <p class="muted" style="text-align:center; margin-top:40px;">— 任务 1.4 完 · 下一步：用 LangGraph 重构 mini_agent —</p>
+</div>
+</body>
+</html>

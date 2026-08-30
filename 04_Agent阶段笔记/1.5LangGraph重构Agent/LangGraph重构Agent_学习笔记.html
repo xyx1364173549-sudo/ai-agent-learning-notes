@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LangGraph 重构 Agent · 学习笔记</title>
+<style>
+  :root {
+    --bg: #1a1b26; --card: #24283b; --card2: #2f334d;
+    --text: #c0caf5; --muted: #7982a9;
+    --blue: #7aa2f7; --purple: #bb9af7; --green: #9ece6a;
+    --orange: #e0af68; --red: #f7768e; --cyan: #7dcfff;
+    --code-bg: #16161e; --border: #3b4261;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, "Microsoft YaHei", "PingFang SC", sans-serif; line-height: 1.7; padding: 32px 20px 60px; }
+  .wrap { max-width: 880px; margin: 0 auto; }
+  h1 { font-size: 28px; font-weight: 600; color: var(--blue); margin-bottom: 8px; }
+  .subtitle { color: var(--muted); font-size: 14px; margin-bottom: 32px; }
+  h2 { font-size: 20px; font-weight: 600; margin: 36px 0 14px; padding-left: 12px; border-left: 4px solid var(--blue); }
+  h3 { font-size: 15px; font-weight: 600; margin: 16px 0 6px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px 22px; margin: 14px 0; }
+  .card.blue { border-left: 4px solid var(--blue); }
+  .card.purple { border-left: 4px solid var(--purple); }
+  .card.green { border-left: 4px solid var(--green); }
+  .card.orange { border-left: 4px solid var(--orange); }
+  .card.red { border-left: 4px solid var(--red); }
+  .desc { color: var(--text); font-size: 14px; margin: 6px 0; }
+  .key { color: var(--cyan); font-weight: 600; }
+  pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 10px; padding: 14px; overflow-x: auto; font-family: "JetBrains Mono", "Fira Code", Consolas, monospace; font-size: 13px; line-height: 1.6; margin: 10px 0; }
+  code { font-family: "JetBrains Mono", "Fira Code", Consolas, monospace; }
+  .cmt { color: #565f89; } .str { color: var(--green); } .kw { color: var(--purple); } .fn { color: var(--blue); }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 14px; }
+  th, td { border: 1px solid var(--border); padding: 9px 12px; text-align: left; }
+  th { background: var(--card2); color: var(--blue); font-weight: 600; }
+  .muted { color: var(--muted); }
+  .flow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 14px 0; }
+  .flow-box { background: var(--card2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; font-size: 13px; }
+  .flow-arr { color: var(--orange); font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>LangGraph 重构 Agent</h1>
+  <div class="subtitle">任务 1.5 · 学习笔记 · 2026-08-25 · 阶段一收官之作</div>
+
+  <div class="card orange">
+    <p><strong>一句话总结：</strong>把 mini_agent 的手写 while 循环，改造成 LangGraph 状态图——用"节点 + 条件边"表达"下令 → 执行 → 回答"的 Agent 循环。</p>
+  </div>
+
+  <h2>一、Agent 循环</h2>
+
+  <div class="card blue">
+    <h3><span style="color:var(--blue)">① 手写循环 → 状态图</span></h3>
+    <div class="flow">
+      <span class="flow-box">START</span><span class="flow-arr">→</span>
+      <span class="flow-box" style="border-color:var(--blue)">call_model</span><span class="flow-arr">→</span>
+      <span class="flow-box" style="border-color:var(--orange)">有工具?</span><span class="flow-arr">→</span>
+      <span class="flow-box" style="border-color:var(--green)">tool_node</span>
+    </div>
+    <p class="muted" style="font-size:13px;">tool_node 执行完回到 call_model 形成"环"，无工具则 END</p>
+  </div>
+
+  <div class="card purple">
+    <h3><span style="color:var(--purple)">② Annotated + add_messages</span> —— 消息累加</h3>
+<pre><code><span class="kw">class</span> <span class="fn">AgentState</span>(TypedDict):
+    messages: Annotated[list, add_messages]   <span class="cmt"># 累加，不是覆盖</span></code></pre>
+    <p class="muted" style="font-size:13px;">类比：默认覆盖=换新纸；add_messages=在同一个本子上往下写</p>
+  </div>
+
+  <h2>二、三个节点/函数</h2>
+
+  <div class="card green">
+    <h3><span style="color:var(--green)">③ call_model</span> —— 调 LLM</h3>
+<pre><code><span class="kw">def</span> <span class="fn">call_model</span>(state):
+    response = llm_with_tools.invoke(state[<span class="str">"messages"</span>])
+    <span class="kw">return</span> {<span class="str">"messages"</span>: [response]}</code></pre>
+    <p class="muted" style="font-size:13px;">第1次 content 空（下令），第2次 content 正常（回答）</p>
+  </div>
+
+  <div class="card orange">
+    <h3><span style="color:var(--orange)">④ tool_node</span> —— 执行工具（按 name 分发）</h3>
+<pre><code>TOOLS = {<span class="str">"get_weather_tool"</span>: get_weather_tool,
+         <span class="str">"calculator_tool"</span>: calculator_tool}
+
+<span class="kw">def</span> <span class="fn">tool_node</span>(state):
+    msg = state[<span class="str">"messages"</span>][-1]
+    tool_messages = []
+    <span class="kw">for</span> tool_call <span class="kw">in</span> msg.tool_calls:
+        tool = TOOLS[tool_call[<span class="str">"name"</span>]]         <span class="cmt"># 按 name 分发</span>
+        result = tool.invoke(tool_call[<span class="str">"args"</span>])   <span class="cmt"># args 是字典</span>
+        tool_messages.append(ToolMessage(content=result, tool_call_id=tool_call[<span class="str">"id"</span>]))
+    <span class="kw">return</span> {<span class="str">"messages"</span>: tool_messages}          <span class="cmt"># 要 return！</span></code></pre>
+  </div>
+
+  <div class="card red">
+    <h3><span style="color:var(--red)">⑤ should_continue</span> —— 方向代号（不是节点名）</h3>
+<pre><code><span class="kw">def</span> <span class="fn">should_continue</span>(state):
+    <span class="kw">if</span> state[<span class="str">"messages"</span>][-1].tool_calls:
+        <span class="kw">return</span> <span class="str">"continue"</span>    <span class="cmt"># 方向代号</span>
+    <span class="kw">return</span> <span class="str">"finish"</span>
+
+graph.add_conditional_edges(<span class="str">"call_model"</span>, should_continue,
+    {<span class="str">"continue"</span>: <span class="str">"tool_node"</span>, <span class="str">"finish"</span>: END})</code></pre>
+  </div>
+
+  <h2>三、两个核心坑</h2>
+
+  <div class="card red">
+    <h3><span style="color:var(--red)">⑥ 节点名三处一致</span>（本任务最大的坑）</h3>
+<pre><code>graph.add_node(<span class="str">"tool_node"</span>, tool_node)              <span class="cmt"># ① 注册</span>
+graph.add_conditional_edges(..., {<span class="str">"continue"</span>: <span class="str">"tool_node"</span>, ...})  <span class="cmt"># ② 映射</span>
+graph.add_edge(<span class="str">"tool_node"</span>, <span class="str">"call_model"</span>)           <span class="cmt"># ③ 连边</span></code></pre>
+    <p class="muted" style="font-size:13px;">三处 "tool_node" 必须一字不差（本次踩坑 "tools"/"tool"/"tool_node" 打架）</p>
+  </div>
+
+  <div class="card green">
+    <h3><span style="color:var(--green)">⑦ 循环自动终止</span></h3>
+    <p class="desc">第 2 次 call_model 时 AI 已拿到工具结果，不再"下令"而是"回答"（无 tool_calls），should_continue 返回 finish，结束循环。</p>
+  </div>
+
+  <h2>四、自测清单</h2>
+  <div class="card">
+    <ul style="padding-left:20px; line-height:2;">
+      <li>Agent 循环的状态图和 while 循环是什么关系？</li>
+      <li>Annotated + add_messages 解决什么问题？</li>
+      <li>tool_node 为什么要用 TOOLS 按 name 分发？</li>
+      <li>路由函数返回"方向代号"还是"节点名"？</li>
+      <li>节点名哪三处必须一致？</li>
+      <li>循环为什么能自动终止？</li>
+    </ul>
+  </div>
+
+  <p class="muted" style="text-align:center; margin-top:40px;">— 阶段一学习任务 1.1~1.5 全部完成 —</p>
+</div>
+</body>
+</html>

@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 项目运行产物
+*.log
+*.tmp
+clipboard_data/
+dist/
+build/
+*.spec
+
+# 大文件 / 参考资料中的 PDF（按约定不上传）
+99_参考资料/*.pdf
+
+# 密钥（防止误传）
+.env
+*.key

@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LangChain 核心抽象 · 学习笔记</title>
+<style>
+  :root {
+    --bg: #1a1b26;
+    --card: #24283b;
+    --card2: #2f334d;
+    --text: #c0caf5;
+    --muted: #7982a9;
+    --blue: #7aa2f7;
+    --purple: #bb9af7;
+    --green: #9ece6a;
+    --orange: #e0af68;
+    --red: #f7768e;
+    --cyan: #7dcfff;
+    --code-bg: #16161e;
+    --border: #3b4261;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, "Microsoft YaHei", "PingFang SC", sans-serif;
+    line-height: 1.7;
+    padding: 32px 20px 60px;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; }
+  h1 { font-size: 28px; font-weight: 600; color: var(--blue); margin-bottom: 8px; }
+  .subtitle { color: var(--muted); font-size: 14px; margin-bottom: 32px; }
+  h2 {
+    font-size: 20px; font-weight: 600; margin: 40px 0 16px;
+    padding-left: 12px; border-left: 4px solid var(--blue); color: var(--text);
+  }
+  h3 { font-size: 16px; font-weight: 600; margin: 20px 0 10px; }
+  p { margin: 8px 0; }
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 20px 24px; margin: 16px 0;
+  }
+  .card.blue { border-left: 4px solid var(--blue); }
+  .card.purple { border-left: 4px solid var(--purple); }
+  .card.green { border-left: 4px solid var(--green); }
+  .card.orange { border-left: 4px solid var(--orange); }
+  .tag {
+    display: inline-block; padding: 2px 10px; border-radius: 20px;
+    font-size: 12px; margin-right: 8px;
+  }
+  .tag.blue { background: rgba(122,162,247,0.15); color: var(--blue); }
+  .tag.purple { background: rgba(187,154,247,0.15); color: var(--purple); }
+  .tag.green { background: rgba(158,206,106,0.15); color: var(--green); }
+  .tag.orange { background: rgba(224,175,104,0.15); color: var(--orange); }
+  .analogy {
+    background: rgba(224,175,104,0.08); border: 1px dashed var(--orange);
+    border-radius: 8px; padding: 10px 14px; margin: 12px 0;
+    color: var(--orange); font-size: 14px;
+  }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px; overflow-x: auto;
+    font-family: "JetBrains Mono", "Fira Code", Consolas, monospace;
+    font-size: 13px; line-height: 1.6; margin: 12px 0;
+  }
+  code { font-family: "JetBrains Mono", "Fira Code", Consolas, monospace; }
+  .cmt { color: #565f89; }
+  .str { color: var(--green); }
+  .kw { color: var(--purple); }
+  .fn { color: var(--blue); }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 14px; }
+  th, td { border: 1px solid var(--border); padding: 10px 12px; text-align: left; }
+  th { background: var(--card2); color: var(--blue); font-weight: 600; }
+  .flow { display: flex; flex-direction: column; gap: 0; margin: 16px 0; }
+  .flow-step {
+    display: flex; align-items: center; gap: 14px;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 16px; margin-bottom: 8px;
+  }
+  .flow-num {
+    min-width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 14px;
+  }
+  .n1 { background: var(--blue); color: #1a1b26; }
+  .n2 { background: var(--purple); color: #1a1b26; }
+  .n3 { background: var(--green); color: #1a1b26; }
+  .flow-arrow { text-align: center; color: var(--muted); font-size: 16px; line-height: 1; margin: -4px 0; }
+  .pit { color: var(--red); font-weight: 600; }
+  .key { color: var(--cyan); font-weight: 600; }
+  .muted { color: var(--muted); }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 16px 0; }
+  @media (max-width: 640px) { .grid3 { grid-template-columns: 1fr; } }
+  .mini-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+  .mini-card .title { font-weight: 600; font-size: 15px; margin-bottom: 6px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>LangChain 核心抽象</h1>
+  <div class="subtitle">任务 1.1 · 学习笔记 · 2026-08-20 · 前置：原生 Function Calling</div>
+
+  <!-- 一句话总纲 -->
+  <div class="card orange">
+    <p><strong>一句话总纲：</strong>LangChain 用三个"零件"，封装了你手写 FC 时的三个环节。</p>
+    <table>
+      <tr><th>零件</th><th>封装了手写的什么</th><th>类比</th></tr>
+      <tr><td><span class="tag blue">ChatModel</span></td><td><code>requests.post</code> + 解析响应</td><td>万能插座</td></tr>
+      <tr><td><span class="tag purple">PromptTemplate</span></td><td>f-string 拼 prompt</td><td>填空题</td></tr>
+      <tr><td><span class="tag green">Tool</span></td><td>手写 JSON Schema + 执行工具</td><td>文件袋 / 自动印刷机</td></tr>
+    </table>
+  </div>
+
+  <!-- 三大抽象 -->
+  <h2>一、三大核心抽象</h2>
+
+  <div class="card blue">
+    <h3><span class="tag blue">ChatModel</span>万能插座</h3>
+    <p>统一 LLM 接口，换模型只改 <code>model</code> / <code>base_url</code>。</p>
+<pre><code><span class="kw">from</span> langchain_openai <span class="kw">import</span> ChatOpenAI
+
+llm = ChatOpenAI(
+    model=<span class="str">"deepseek-v4-flash"</span>,           <span class="cmt"># 用什么模型</span>
+    api_key=API_KEY,                     <span class="cmt"># 身份凭证</span>
+    base_url=<span class="str">"https://api.deepseek.com"</span>, <span class="cmt"># 模型地址</span>
+)
+
+reply = llm.invoke(<span class="str">"用一句话介绍你自己"</span>)
+print(reply.content)   <span class="cmt"># AIMessage 对象，用 .content 取正文</span></code></pre>
+    <div class="analogy">💡 invoke = 榨汁机：放原料 → 运转 → 出果汁（传参 + 执行 + 返回 三合一）</div>
+    <table>
+      <tr><th>手写 requests</th><th>ChatOpenAI 参数</th></tr>
+      <tr><td><code>json={"model": MODEL}</code></td><td><code>model=</code></td></tr>
+      <tr><td><code>headers={"Authorization": ...}</code></td><td><code>api_key=</code></td></tr>
+      <tr><td><code>f"{BASE_URL}/chat/completions"</code></td><td><code>base_url=</code></td></tr>
+    </table>
+  </div>
+
+  <div class="card purple">
+    <h3><span class="tag purple">PromptTemplate</span>填空题</h3>
+    <p>把"固定文字"和"变量"分开，变量挖成空位 <code>{变量}</code>。</p>
+<pre><code><span class="kw">from</span> langchain_core.prompts <span class="kw">import</span> ChatPromptTemplate
+
+template = ChatPromptTemplate.from_messages([
+    (<span class="str">"system"</span>, <span class="str">"你是一个{role}，回答风格要{style}"</span>),
+    (<span class="str">"user"</span>, <span class="str">"{question}"</span>),
+])
+
+prompt = template.format_messages(
+    role=<span class="str">"编程老师"</span>, style=<span class="str">"通俗易懂"</span>, question=<span class="str">"什么是递归？"</span>,
+)</code></pre>
+    <div class="analogy">💡 from_messages 的元组 <code>(角色, 内容)</code> = 手写的 <code>{"role":..., "content":...}</code>；format_messages 返回的 messages 列表，正好喂给 invoke</div>
+  </div>
+
+  <div class="card green">
+    <h3><span class="tag green">Tool</span>文件袋（三自动）</h3>
+    <p><code>@tool</code> 把普通函数变成工具，自动生成说明书。</p>
+<pre><code><span class="kw">from</span> langchain_core.tools <span class="kw">import</span> tool
+
+<span class="kw">@tool</span>
+<span class="kw">def</span> <span class="fn">get_weather_tool</span>(city: str) -> str:
+    <span class="str">"""查询指定城市的天气"""</span>
+    <span class="kw">return</span> f<span class="str">"{city} 今天晴天，20°C"</span></code></pre>
+    <table>
+      <tr><th>函数里的信息</th><th>自动变成</th><th>对应手写</th></tr>
+      <tr><td>函数名 <code>get_weather_tool</code></td><td><code>name</code></td><td><code>"name"</code></td></tr>
+      <tr><td>docstring <code>查询...天气</code></td><td><code>description</code></td><td><code>"description"</code></td></tr>
+      <tr><td>类型注解 <code>city: str</code></td><td><code>parameters</code></td><td>JSON Schema</td></tr>
+    </table>
+    <div class="analogy">⚠️ docstring 不是注释！它是 Python 存到 <code>函数.__doc__</code> 的元数据。@tool 读的是 __doc__，不是"AI 读注释"</div>
+  </div>
+
+  <!-- 完整闭环 -->
+  <h2>二、完整闭环（两次调用）</h2>
+  <div class="flow">
+    <div class="flow-step"><div class="flow-num n1">1</div><div><strong>PromptTemplate</strong> 拼出带角色的 messages 列表</div></div>
+    <div class="flow-arrow">▼</div>
+    <div class="flow-step"><div class="flow-num n2">2</div><div><strong>ChatModel（第 1 次）</strong> AI 思考 → 返回 tool_calls（决定调工具，content 为空）</div></div>
+    <div class="flow-arrow">▼</div>
+    <div class="flow-step"><div class="flow-num n3">3</div><div><strong>Tool 执行</strong> get_weather_tool.invoke → "晴天 20°C"</div></div>
+    <div class="flow-arrow">▼</div>
+    <div class="flow-step"><div class="flow-num n2">4</div><div><strong>ChatModel（第 2 次）</strong> 收到工具结果 → 组织成自然语言</div></div>
+  </div>
+
+<pre><code>llm_with_tools = llm.bind_tools([get_weather_tool])   <span class="cmt"># 装工具箱，返回新副本</span>
+
+human_msg = HumanMessage(content=<span class="str">"北京天气怎么样"</span>)
+msg = llm_with_tools.invoke([human_msg])               <span class="cmt"># 第 1 次：下令</span>
+
+tool_messages = []
+<span class="kw">for</span> tool_call <span class="kw">in</span> msg.tool_calls:
+    result = get_weather_tool.invoke(tool_call[<span class="str">"args"</span>])
+    tool_messages.append(ToolMessage(content=result, tool_call_id=tool_call[<span class="str">"id"</span>]))
+
+final = llm_with_tools.invoke([human_msg, msg, *tool_messages])  <span class="cmt"># 第 2 次：组织语言</span>
+print(final.content)</code></pre>
+
+  <!-- 难点 -->
+  <h2>三、难点澄清（理解这些才算真懂）</h2>
+  <div class="card">
+    <h3>1. docstring 为什么能被 @tool 读到？</h3>
+    <p class="muted">docstring 是 Python 存到 <code>函数.__doc__</code> 的元数据，<code># 注释</code>才被忽略。AI 看不到源代码，只看到 HTTP 请求里的 JSON。</p>
+    <h3>2. invoke 是什么意思？</h3>
+    <p class="muted">传参 + 执行 + 返回，三合一。是 LangChain 统一的"运行开关"。</p>
+    <h3>3. @tool 之后函数变了吗？</h3>
+    <p class="muted">变了，变成 <code>StructuredTool</code> 对象：<code>.name</code> / <code>.description</code> / <code>.func</code> 可用，<code>.__name__</code> 报错。</p>
+    <h3>4. bind_tools 是什么意思？</h3>
+    <p class="muted">创建"带工具箱的模型副本"，<code>llm</code> 不变。</p>
+    <h3>5. 为什么第二次还用 llm_with_tools？</h3>
+    <p class="muted">保留 AI"继续调工具"的能力。<span class="key">content 空值 = AI 在下令</span>（第一次只下令不开口）。</p>
+    <h3>6. 数据是怎么流动的？（template 和 prompt 怎么到 llm）</h3>
+    <p class="muted">template 和 prompt 是"一条流水线上的两站"：<code>template(带空位) → format_messages 填空 → prompt(填好的 messages) → invoke(prompt) 传参 → llm</code>。连接靠"函数传参"，不是 from_messages（它只负责"造模板"）。</p>
+    <h3>7. 消息类型（HumanMessage / ToolMessage）</h3>
+    <p class="muted">LangChain 把四种 role 做成了类：<code>SystemMessage</code>(system) / <code>HumanMessage</code>(user) / <code>AIMessage</code>(assistant) / <code>ToolMessage</code>(tool)。ToolMessage 多一个 <code>tool_call_id</code> 字段，用于"对号入座"。</p>
+  </div>
+
+  <!-- 踩坑 -->
+  <h2>四、踩坑清单</h2>
+  <div class="card">
+    <table>
+      <tr><th>#</th><th>坑</th><th>教训</th></tr>
+      <tr><td class="pit">49</td><td><code>os.getenv("deepseek_api_key")</code> 小写</td><td>Windows 碰巧能跑，Linux 返回 None；用大写与 .env 一致</td></tr>
+      <tr><td class="pit">50</td><td>第二次调用缩进进 for 循环</td><td>多工具时会重复调用 AI；退回 for 外</td></tr>
+      <tr><td class="pit">51</td><td>用 <code>函数.__name__</code> 访问 @tool 对象</td><td>报 AttributeError；用 <code>.name</code> / <code>.func</code></td></tr>
+    </table>
+  </div>
+
+  <!-- 类比 -->
+  <h2>五、类比速记</h2>
+  <div class="grid3">
+    <div class="mini-card"><div class="title" style="color:var(--blue)">ChatModel</div><div class="muted">万能插座，换模型改一行</div></div>
+    <div class="mini-card"><div class="title" style="color:var(--purple)">PromptTemplate</div><div class="muted">填空题，挖空填变量</div></div>
+    <div class="mini-card"><div class="title" style="color:var(--green)">@tool</div><div class="muted">文件袋，标签=name/description</div></div>
+    <div class="mini-card"><div class="title" style="color:var(--orange)">invoke</div><div class="muted">榨汁机，放原料出果汁</div></div>
+    <div class="mini-card"><div class="title" style="color:var(--cyan)">bind_tools</div><div class="muted">给手机装 App，返回新副本</div></div>
+    <div class="mini-card"><div class="title" style="color:var(--red)">老板-秘书</div><div class="muted">需求/指令/结果 三样对账</div></div>
+    <div class="mini-card"><div class="title" style="color:var(--green)">点外卖</div><div class="muted">模板=菜单，填空=填单，invoke=递厨师</div></div>
+  </div>
+
+  <!-- 自测 -->
+  <h2>六、自测清单</h2>
+  <div class="card">
+    <ul style="padding-left:20px; line-height:2;">
+      <li>手写 FC 的"发请求"，LangChain 用什么替代？</li>
+      <li>@tool 之后 get_weather_tool 是什么类型？</li>
+      <li>invoke 和 requests.post 什么关系？</li>
+      <li>第二次调用为什么要传 [human_msg, msg, *tool_messages]？</li>
+      <li>bind_tools 会不会改变原来的 llm？</li>
+      <li>第一次调用为什么 content 是空的？</li>
+    </ul>
+  </div>
+
+  <p class="muted" style="text-align:center; margin-top:40px;">— 任务 1.1 完 · 下一步：LCEL 管道 —</p>
+</div>
+</body>
+</html>

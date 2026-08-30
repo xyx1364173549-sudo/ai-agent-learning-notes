@@ -1,0 +1,8 @@
+.env
+.venv/
+.idea/
+__pycache__/
+
+# 运行时生成的数据库文件（非源码，不入库）
+*.db
+chroma.sqlite3/

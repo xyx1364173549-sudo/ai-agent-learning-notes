@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的 AI 助手</title>
+    <style>
+        body {
+            font-family: -apple-system, "Microsoft YaHei", sans-serif;
+            max-width: 640px;
+            margin: 40px auto;
+            padding: 0 20px;
+            background: #f5f6f8;
+            color: #1f2329;
+        }
+        h1 { font-size: 22px; text-align: center; margin-bottom: 20px; }
+        #chat-box {
+            height: 400px;
+            overflow-y: auto;
+            background: #fff;
+            border: 1px solid #e3e5e8;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+        .msg { margin-bottom: 12px; line-height: 1.6; white-space: pre-wrap; }
+        .msg.user { text-align: right; }
+        .msg.user .bubble {
+            display: inline-block;
+            background: #378add;
+            color: #fff;
+            border-radius: 12px;
+            padding: 8px 12px;
+            text-align: left;
+            max-width: 80%;
+        }
+        .msg.ai .bubble {
+            display: inline-block;
+            background: #eef1f4;
+            color: #1f2329;
+            border-radius: 12px;
+            padding: 8px 12px;
+            max-width: 80%;
+        }
+        .input-row { display: flex; gap: 8px; }
+        #user-input {
+            flex: 1;
+            padding: 10px 12px;
+            border: 1px solid #e3e5e8;
+            border-radius: 8px;
+            font-size: 15px;
+        }
+        #user-input:focus { outline: none; border-color: #378add; }
+        button {
+            padding: 10px 20px;
+            background: #378add;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            cursor: pointer;
+        }
+        button:hover { background: #2f6fb5; }
+    </style>
+</head>
+<body>
+    <h1>🤖 我的 AI 助手</h1>
+    <div id="chat-box"></div>
+    <div class="input-row">
+        <input id="user-input" placeholder="问天气、算数学题..." />
+        <button onclick="send()">发送</button>
+    </div>
+
+    <script>
+        async function send() {
+            const input = document.getElementById('user-input');
+            const text = input.value.trim();          // 去掉首尾空格
+            if (!text) return;                        // 空消息不发送
+
+            const chatBox = document.getElementById('chat-box');
+
+            // 1. 先显示用户自己说的话（蓝色气泡，靠右）
+            chatBox.innerHTML += `<div class="msg user"><span class="bubble">${text}</span></div>`;
+
+            // 2. 清空输入框，方便输入下一条
+            input.value = '';
+
+            // 3. 滚动到底部，让最新消息可见
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            try {
+                // 4. 调用后端 /chat 接口（等价于 Python 的 requests.post）
+                const resp = await fetch('/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: text })
+                });
+                const data = await resp.json();      // 解析返回的 JSON
+
+                // 5. 显示 AI 的回复（灰色气泡，靠左）
+                chatBox.innerHTML += `<div class="msg ai"><span class="bubble">${data.reply}</span></div>`;
+            } catch (err) {
+                // 6. 出错了也提示出来（比如后端没启动）
+                chatBox.innerHTML += `<div class="msg ai"><span class="bubble">⚠️ 出错了：${err}</span></div>`;
+            }
+
+            // 7. 回复后再次滚动到底部
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        // 额外体验：按回车键也能发送
+        document.getElementById('user-input').addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                send();
+            }
+        });
+    </script>
+</body>
+</html>

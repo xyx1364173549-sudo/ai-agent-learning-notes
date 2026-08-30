@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2.1 Embedding 与向量化 · 学习笔记</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --card: #161b22;
+    --border: #30363d;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --accent: #58a6ff;
+    --teal: #3fb950;
+    --amber: #d29922;
+    --red: #f85149;
+    --code-bg: #0a0e14;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    padding: 32px 16px;
+    max-width: 860px;
+    margin: 0 auto;
+  }
+  h1 { font-size: 24px; font-weight: 600; margin-bottom: 8px; }
+  .subtitle { color: var(--muted); font-size: 14px; margin-bottom: 24px; }
+  .summary {
+    background: linear-gradient(135deg, #1f6feb22, #3fb95022);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+    margin-bottom: 28px;
+    font-size: 15px;
+  }
+  .summary b { color: var(--accent); }
+  h2 { font-size: 18px; font-weight: 600; margin: 28px 0 12px; color: var(--accent); }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin-bottom: 14px;
+  }
+  .card h3 { font-size: 15px; font-weight: 600; margin-bottom: 8px; }
+  .card h3 .tag { font-size: 12px; color: var(--teal); margin-left: 8px; font-weight: 400; }
+  .card p, .card li { font-size: 14px; color: var(--muted); }
+  .card ul { padding-left: 20px; }
+  .card li { margin-bottom: 4px; }
+  .key { color: var(--accent); font-weight: 500; }
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    overflow-x: auto;
+    font-family: 'Cascadia Code', Consolas, monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #c9d1d9;
+    margin: 12px 0;
+  }
+  code { font-family: 'Cascadia Code', Consolas, monospace; }
+  table { border-collapse: collapse; width: 100%; font-size: 13.5px; margin: 10px 0; }
+  th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; }
+  th { background: #1c2128; color: var(--text); }
+  td { color: var(--muted); }
+  .flow { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 14px 0; }
+  .flow .step {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 14px; font-size: 13.5px;
+  }
+  .flow .arrow { color: var(--accent); font-size: 18px; }
+  .analogy { border-left: 3px solid var(--amber); padding-left: 12px; margin: 10px 0; }
+  .analogy b { color: var(--amber); }
+  .warn { border-left: 3px solid var(--red); padding-left: 12px; margin: 10px 0; color: var(--muted); }
+  .check { list-style: none; padding-left: 0; }
+  .check li::before { content: "☐ "; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<h1>2.1 Embedding 与向量化</h1>
+<div class="subtitle">阶段二 · RAG 根基 · 手算版理解原理</div>
+
+<div class="summary">
+  <b>一句话总结：</b>Embedding = 把文字变成一串数字（向量）。语义越相近的文字，向量靠得越近；用「余弦相似度」量化"有多近"。
+</div>
+
+<h2>核心机制：文字 → 向量 → 相似度</h2>
+<div class="flow">
+  <div class="step">文字<br><span style="color:var(--muted)">"我喜欢吃苹果"</span></div>
+  <span class="arrow">→</span>
+  <div class="step">向量<br><span style="color:var(--muted)">[1,1,1,1,0,0,0,0]</span></div>
+  <span class="arrow">→</span>
+  <div class="step">余弦相似度<br><span style="color:var(--teal)">0.75 / 0.0</span></div>
+</div>
+
+<h2>知识点</h2>
+
+<div class="card">
+  <h3>① Embedding 是什么<span class="tag">概念</span></h3>
+  <p>把文字映射成向量，把"语义相近"变成"坐标距离近"这种可计算的数学关系。</p>
+  <div class="analogy"><b>类比：</b>给文字发"坐标"。苹果和香蕉都是水果 → 坐标挨在一起；苹果和汽车 → 坐标隔老远。</div>
+</div>
+
+<div class="card">
+  <h3>② 词袋模型 Bag-of-Words<span class="tag">向量化</span></h3>
+  <p>数一句话里每个词出现几次，得到词频向量。</p>
+  <ul>
+    <li><span class="key">词表 vocab</span>：所有词去重后的列表，顺序 = 每个词在向量里的下标</li>
+    <li><span class="key">词频向量</span>：长度 = 词表长度，每个位置 = 该词出现次数</li>
+  </ul>
+  <div class="analogy"><b>类比：</b>"手工记账"——简陋但能懂原理。</div>
+</div>
+
+<div class="card">
+  <h3>③ 余弦相似度<span class="tag">度量</span></h3>
+  <p><code>cos(θ) = 点积 / (模长乘积)</code></p>
+  <ul>
+    <li>值 = 1 → 方向一致（最相似）</li>
+    <li>值 = 0 → 垂直，无关</li>
+    <li>值 = -1 → 方向相反</li>
+  </ul>
+  <p style="margin-top:6px">用夹角而非距离：夹角只看"方向"，不受文字长短影响。</p>
+</div>
+
+<div class="card">
+  <h3>④ zip 拉链函数<span class="tag">语法</span></h3>
+  <p><code>zip([1,1,1,1], [1,1,1,0])</code> → 对应位置配对 <code>(1,1)(1,1)(1,1)(1,0)</code>，配合 for 同时取两个向量同一位置的数。</p>
+  <div class="analogy"><b>类比：</b>"拉链"，把两条队伍按位置咬合。</div>
+</div>
+
+<div class="card">
+  <h3>⑤ 词袋模型 vs 真实 Embedding<span class="tag">拔高认知</span></h3>
+  <table>
+    <tr><th></th><th>词袋模型</th><th>真实 Embedding</th></tr>
+    <tr><td>谁定向量</td><td>手工规则（数词频）</td><td>神经网络（训练）</td></tr>
+    <tr><td>懂同义词</td><td>❌ 苹果≠水果</td><td>✅ 语义相近即相近</td></tr>
+    <tr><td>懂词序</td><td>❌ 狗咬人=人咬狗</td><td>✅ 能区分</td></tr>
+    <tr><td>维度</td><td>随词表暴涨</td><td>固定</td></tr>
+  </table>
+  <div class="analogy"><b>关键：</b>本质相同（文字→坐标→算距离），区别只在"谁定坐标"的聪明程度。真实 embedding = 神经网络学的"语义指纹"。</div>
+</div>
+
+<h2>核心代码</h2>
+<pre>def sentence_to_vector(sentence, vocab):
+    vector = [0] * len(vocab)      # 先造"全 0"向量
+    for word in sentence:
+        index = vocab.index(word)  # 词 → 词表下标
+        vector[index] += 1         # 该位置计数 +1
+    return vector
+
+def cosine_similarity(vec1, vec2):
+    dot = sum(a * b for a, b in zip(vec1, vec2))
+    norm1 = math.sqrt(sum(x * x for x in vec1))
+    norm2 = math.sqrt(sum(x * x for x in vec2))
+    return dot / (norm1 * norm2)</pre>
+
+<h2>踩坑</h2>
+<div class="warn">#60 第 4 行 <code>from langchain_core.indexing import index</code>（IDE 自动补全垃圾 import，又犯 #25）——删掉，只留 <code>import math</code>。</div>
+
+<h2>自测清单</h2>
+<ul class="check">
+  <li>能说出 Embedding 是什么（文字 → 向量）</li>
+  <li>能说出词袋向量怎么来的（词表 → 下标 → 词频）</li>
+  <li>能写出余弦相似度公式（点积 / 模长乘积）</li>
+  <li>能说出 zip 的作用（对应位置配对）</li>
+  <li>能说出词袋 vs 真实 embedding 的区别（手工规则 vs 神经网络）</li>
+</ul>
+
+</body>
+</html>

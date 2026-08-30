@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2.4 检索与重排序 · 学习笔记</title>
+<style>
+:root{
+  --bg:#0d1117; --panel:#161b22; --panel2:#1c2230; --line:#2d333b;
+  --text:#e6edf3; --muted:#8b949e;
+  --blue:#58a6ff; --green:#3fb950; --orange:#d29922; --red:#f85149;
+  --purple:#bc8cff; --cyan:#39c5cf;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--text);
+  font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;
+  line-height:1.75; padding:32px 20px 80px;
+}
+.wrap{max-width:920px;margin:0 auto}
+header{
+  border-bottom:2px solid var(--line); padding-bottom:20px; margin-bottom:32px;
+}
+.tag{
+  display:inline-block; background:rgba(88,166,255,.12); color:var(--blue);
+  border:1px solid rgba(88,166,255,.3); border-radius:20px;
+  padding:3px 14px; font-size:12px; letter-spacing:1px; margin-bottom:12px;
+}
+h1{font-size:27px; margin-bottom:10px}
+.sub{color:var(--muted); font-size:14px}
+h2{
+  font-size:20px; margin:38px 0 16px; padding-left:12px;
+  border-left:4px solid var(--blue);
+}
+h3{font-size:16px; margin:22px 0 10px; color:var(--cyan)}
+p{margin-bottom:12px}
+.muted{color:var(--muted); font-size:14px}
+.key{color:var(--orange); font-weight:600}
+.key-g{color:var(--green); font-weight:600}
+.key-r{color:var(--red); font-weight:600}
+
+.quote{
+  background:linear-gradient(90deg,rgba(88,166,255,.10),transparent);
+  border-left:4px solid var(--blue); border-radius:0 8px 8px 0;
+  padding:16px 20px; margin:18px 0; font-size:15px;
+}
+.card{
+  background:var(--panel); border:1px solid var(--line);
+  border-radius:10px; padding:20px; margin:16px 0;
+}
+.card.warn{border-color:rgba(248,81,73,.4); background:rgba(248,81,73,.05)}
+.card.ok{border-color:rgba(63,185,80,.4); background:rgba(63,185,80,.05)}
+
+table{width:100%; border-collapse:collapse; margin:14px 0; font-size:14px}
+th,td{border:1px solid var(--line); padding:9px 12px; text-align:left}
+th{background:var(--panel2); color:var(--blue); font-weight:600}
+td{background:var(--panel)}
+
+pre{
+  background:#010409; border:1px solid var(--line); border-radius:8px;
+  padding:16px; overflow-x:auto; margin:14px 0;
+  font-family:Consolas,"Courier New",monospace; font-size:13px; line-height:1.6;
+}
+code{
+  background:rgba(110,118,129,.25); border-radius:4px;
+  padding:2px 6px; font-size:13px; font-family:Consolas,monospace;
+}
+pre code{background:none; padding:0}
+
+/* 两段式流程 */
+.flow{
+  background:var(--panel); border:1px solid var(--line);
+  border-radius:10px; padding:24px; margin:20px 0;
+}
+.flow-row{display:flex; align-items:center; gap:14px; flex-wrap:wrap}
+.flow-box{
+  flex:1; min-width:200px; border-radius:8px; padding:14px 16px;
+  border:1px solid var(--line); background:var(--panel2);
+}
+.flow-box.recall{border-color:rgba(210,153,34,.5); background:rgba(210,153,34,.08)}
+.flow-box.rerank{border-color:rgba(63,185,80,.5); background:rgba(63,185,80,.08)}
+.flow-box .t{font-weight:700; font-size:15px; margin-bottom:6px}
+.flow-box.recall .t{color:var(--orange)}
+.flow-box.rerank .t{color:var(--green)}
+.flow-box .d{font-size:13px; color:var(--muted)}
+.arrow{
+  font-size:22px; color:var(--blue); flex:0 0 auto; text-align:center;
+}
+
+/* 实测对比 */
+.result{
+  display:flex; gap:16px; flex-wrap:wrap; margin:16px 0;
+}
+.result-item{
+  flex:1; min-width:260px; background:var(--panel);
+  border:1px solid var(--line); border-radius:8px; padding:16px;
+}
+.result-item.bad{border-color:rgba(248,81,73,.45)}
+.result-item.good{border-color:rgba(63,185,80,.45)}
+.result-item .hd{font-size:13px; color:var(--muted); margin-bottom:10px}
+.result-item .bd{font-size:14px; line-height:2}
+.result-item.bad .bd .first{color:var(--red); font-weight:600}
+.result-item.bad .bd .second{color:var(--muted)}
+.result-item.good .bd .ans{color:var(--green); font-weight:700; font-size:18px}
+
+/* 踩坑 */
+.pitfall{
+  background:var(--panel); border-left:4px solid var(--red);
+  border-radius:0 8px 8px 0; padding:14px 18px; margin:12px 0;
+}
+.pitfall .n{color:var(--red); font-weight:700; font-size:13px}
+.pitfall .c{font-size:14px; margin-top:6px}
+
+/* 语法辨析 */
+.mini-grid{display:flex; gap:12px; flex-wrap:wrap; margin:14px 0}
+.mini-card{
+  flex:1; min-width:160px; background:var(--panel);
+  border:1px solid var(--line); border-radius:8px; padding:12px 14px;
+}
+.mini-card .title{font-size:14px; font-weight:600; margin-bottom:4px}
+.mini-card .desc{font-size:12px; color:var(--muted)}
+
+ul{margin:10px 0 10px 22px}
+li{margin-bottom:6px; font-size:14px}
+
+footer{
+  margin-top:48px; padding-top:20px; border-top:1px solid var(--line);
+  color:var(--muted); font-size:13px; text-align:center;
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="tag">阶段二 · 任务 2.4</div>
+  <h1>检索 + 重排序优化</h1>
+  <p class="sub">RAG 最后一环 —— 两段式检索：向量粗筛 + LLM 精排</p>
+</header>
+
+<h2>一、一句话总结</h2>
+<div class="quote">
+  <strong>RAG 的检索是"两段式"的</strong>：先用向量数据库<strong>快速粗筛</strong>（召回 top-k），再用 LLM 对候选<strong>精细排序</strong>（重排序）。<br>
+  这是<strong class="key">成本与精度的平衡</strong> —— 向量快而粗，LLM 慢而准。
+</div>
+<p class="muted">这一步把 2.3 遗留的问题解决了：英文 embedding 模型召回不准（勾股定理排在二次方程前面），用 LLM 精排纠正回来。</p>
+
+<h2>二、两段式检索流程</h2>
+<div class="flow">
+  <div class="flow-row">
+    <div class="flow-box recall">
+      <div class="t">① 粗筛 / 召回（recall）</div>
+      <div class="d">
+        向量检索，从海量文档快速召回 top-k 个候选<br>
+        <span class="key">快、便宜，但粗</span> —— 可能召回不准
+      </div>
+    </div>
+    <div class="arrow">▶</div>
+    <div class="flow-box rerank">
+      <div class="t">② 精排 / 重排序（rerank）</div>
+      <div class="d">
+        对 top-k 个候选做精细排序，选出最相关的<br>
+        <span class="key-g">慢、贵，但准</span> —— 纠正粗筛的错误
+      </div>
+    </div>
+  </div>
+</div>
+
+<h3>类比：招聘两轮</h3>
+<table>
+  <tr><th>环节</th><th>谁干</th><th>特点</th></tr>
+  <tr><td>HR 粗筛简历</td><td>向量检索</td><td>快 —— 1000 份里筛出 10 份</td></tr>
+  <tr><td>面试官精排</td><td>LLM 重排序</td><td>慢而准 —— 从 10 份里挑 1 个录用</td></tr>
+</table>
+
+<h2>三、为什么非要两段？（成本 vs 精度）</h2>
+<table>
+  <tr><th>方案</th><th>问题</th></tr>
+  <tr><td>只用向量检索</td><td><span class="key-r">快，但不准</span>（2.3 亲眼看到翻车）</td></tr>
+  <tr><td>只用 LLM 判断全部文档</td><td>准，但<span class="key-r">贵且慢</span> —— 1000 份全塞给 LLM，token 爆炸</td></tr>
+  <tr><td><strong>两段式（工业标准）</strong></td><td><span class="key-g">向量先筛 10 个（便宜快）→ LLM 只判断 10 个（贵但准）</span></td></tr>
+</table>
+
+<h2>四、LLM 重排序（本任务的实现方式）</h2>
+<table>
+  <tr><th>方式</th><th>说明</th><th>本任务</th></tr>
+  <tr><td>Reranker 模型<br>（bge-reranker）</td><td>专门的交叉编码器模型，需下载</td><td>❌ 要下模型，慢</td></tr>
+  <tr><td><strong>LLM 重排序</strong></td><td>让大模型判断候选相关性</td><td><span class="key-g">✅ 复用已有 DeepSeek API，无下载</span></td></tr>
+</table>
+<p><strong>LLM 重排序的关键</strong>：prompt 要明确要求"<strong>只输出编号</strong>"，这样返回值干净（如 <code>"2"</code>），方便程序后续使用。</p>
+
+<h2>五、实测证据：LLM 纠正向量粗筛</h2>
+<div class="result">
+  <div class="result-item bad">
+    <div class="hd">向量粗召回（英文模型）</div>
+    <div class="bd">
+      <div class="first">1. 勾股定理：直角三角形… ❌ 错</div>
+      <div class="second">2. 二次方程的求根公式… ✅ 对</div>
+    </div>
+  </div>
+  <div class="result-item good">
+    <div class="hd">LLM 精排（DeepSeek）</div>
+    <div class="bd">
+      <div class="ans">输出：2</div>
+      <div class="muted">选中"二次方程"，纠正了粗筛</div>
+    </div>
+  </div>
+</div>
+<div class="card ok">
+  <strong class="key-g">这证明：粗筛不准没关系，精排能把对的捞回来。</strong>
+</div>
+
+<h2>六、代码段</h2>
+<pre><code>"""2.4 检索 + 重排序：LLM 精排纠正向量召回"""
+import chromadb
+from llm_client import chat          # 复用 DeepSeek 客户端
+
+# 1. Chroma 粗召回
+client = chromadb.Client()
+collection = client.create_collection("study_materials")
+collection.add(
+    documents=[
+        "二次方程的求根公式是 x = (-b ± √(b²-4ac)) / 2a",
+        "Python 是一种解释型编程语言",
+        "勾股定理：直角三角形两直角边平方和等于斜边平方",
+    ],
+    ids=["math1", "python1", "math2"],
+)
+
+# 2. 粗召回 top-2（英文模型召回不准）
+query = "怎么解一元二次方程"
+result = collection.query(query_texts=[query], n_results=2)
+candidates = result["documents"][0]
+
+print("=== 粗召回结果（英文模型，可能不准）===")
+for i, c in enumerate(candidates):     # enumerate = 带着号码牌的遍历
+    print(f"  {i+1}. {c}")
+
+# 3. LLM 精排：让 DeepSeek 判断哪个候选最相关
+prompt = f"""用户问题：{query}
+候选答案：
+1.{candidates[0]}
+2.{candidates[1]}
+请判断哪个候选答案最能回答用户问题，只输出编号（1 或 2）。
+"""
+reply = chat([
+    {"role": "system", "content": "你是检索排序助手，只输出最相关候选的编号。"},
+    {"role": "user", "content": prompt},
+])
+print("\n=== LLM 精排结果 ===")
+print("最相关候选编号：", reply)</code></pre>
+
+<h3>运行结果</h3>
+<pre><code>=== 粗召回结果（英文模型，可能不准）===
+  1. 勾股定理：直角三角形两直角边平方和等于斜边平方
+  2. 二次方程的求根公式是 x = (-b ± √(b²-4ac)) / 2a
+
+=== LLM 精排结果 ===
+最相关候选编号： 2</code></pre>
+
+<h2>七、踩坑记录</h2>
+<div class="pitfall">
+  <div class="n">#64 · prompt 用花括号包裹</div>
+  <div class="c">
+    <code>prompt = { "用户输入..." }</code> → Python 当成 <strong>set（集合）</strong>，
+    报 <code>Object of type set is not JSON serializable</code>；且 f-string 的 <code>f</code> 写进了字符串内部。<br>
+    <span class="key-g">正确</span>：<code>prompt = f"...{query}..."</code> —— <code>f</code> 前缀在<strong>引号前</strong>，变量用 <code>{}</code> 包。
+  </div>
+</div>
+<div class="pitfall">
+  <div class="n">#65 · query_texts 少了方括号</div>
+  <div class="c">
+    <code>query_texts=query</code> 传的是字符串，应为 <code>query_texts=[query]</code>（列表）。
+    Chroma 容错碰巧能跑，但不规范。
+  </div>
+</div>
+
+<h3>语法辨析（易混）</h3>
+<div class="mini-grid">
+  <div class="mini-card"><div class="title" style="color:var(--blue)">"你好"</div><div class="desc">字符串</div></div>
+  <div class="mini-card"><div class="title" style="color:var(--green)">f"你好{name}"</div><div class="desc">f-string（f 在引号前，{name} 被替换）</div></div>
+  <div class="mini-card"><div class="title" style="color:var(--red)">{"a", "b"}</div><div class="desc">集合 set ← 本任务踩的坑</div></div>
+  <div class="mini-card"><div class="title" style="color:var(--purple)">{"a": 1}</div><div class="desc">字典 dict</div></div>
+</div>
+
+<h2>八、RAG 四步全景（阶段二前半段收官）</h2>
+<pre><code>2.1 向量化（文字→向量）    → embedding，词袋模型 / 神经网络
+2.2 切分（长文档→小块）    → chunk，重叠窗口
+2.3 检索（存向量+粗召回）   → Chroma，add / query
+2.4 重排序（精排）         → LLM rerank，纠正粗筛</code></pre>
+<p class="muted">这四块拼起来，就是论文第 6 章 RAG 模块的完整地基。</p>
+
+<h2>九、自测清单</h2>
+<ul>
+  <li>能说出"粗筛（召回）"和"精排（重排序）"的区别</li>
+  <li>能说出为什么需要两段式（成本与精度的平衡）</li>
+  <li>能说出 LLM 重排序相比 reranker 模型的优势（不用下载模型）</li>
+  <li>能说出你的实测证据（向量排错、LLM 纠正）</li>
+  <li>能说出 f-string 的正确写法（<code>f</code> 前缀在引号前）</li>
+</ul>
+
+<footer>2.4 检索与重排序 · 学习笔记 · 2026-08-28</footer>
+
+</div>
+</body>
+</html>

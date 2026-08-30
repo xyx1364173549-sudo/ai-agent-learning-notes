@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2.3 Chroma 向量数据库 · 学习笔记</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --card: #161b22;
+    --border: #30363d;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --accent: #58a6ff;
+    --teal: #3fb950;
+    --amber: #d29922;
+    --red: #f85149;
+    --code-bg: #0a0e14;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    padding: 32px 16px;
+    max-width: 860px;
+    margin: 0 auto;
+  }
+  h1 { font-size: 24px; font-weight: 600; margin-bottom: 8px; }
+  .subtitle { color: var(--muted); font-size: 14px; margin-bottom: 24px; }
+  .summary {
+    background: linear-gradient(135deg, #1f6feb22, #3fb95022);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+    margin-bottom: 28px;
+    font-size: 15px;
+  }
+  .summary b { color: var(--accent); }
+  h2 { font-size: 18px; font-weight: 600; margin: 28px 0 12px; color: var(--accent); }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin-bottom: 14px;
+  }
+  .card h3 { font-size: 15px; font-weight: 600; margin-bottom: 8px; }
+  .card h3 .tag { font-size: 12px; color: var(--teal); margin-left: 8px; font-weight: 400; }
+  .card p, .card li { font-size: 14px; color: var(--muted); }
+  .card ul { padding-left: 20px; }
+  .card li { margin-bottom: 4px; }
+  .key { color: var(--accent); font-weight: 500; }
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    overflow-x: auto;
+    font-family: 'Cascadia Code', Consolas, monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #c9d1d9;
+    margin: 12px 0;
+  }
+  table { border-collapse: collapse; width: 100%; font-size: 13.5px; margin: 10px 0; }
+  th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; }
+  th { background: #1c2128; color: var(--text); }
+  td { color: var(--muted); }
+  .analogy { border-left: 3px solid var(--amber); padding-left: 12px; margin: 10px 0; }
+  .analogy b { color: var(--amber); }
+  .warn { border-left: 3px solid var(--red); padding-left: 12px; margin: 10px 0; color: var(--muted); }
+  .warn b { color: var(--red); }
+  .check { list-style: none; padding-left: 0; }
+  .check li::before { content: "☐ "; color: var(--muted); }
+  .wrong { color: var(--red); }
+  .right { color: var(--teal); }
+</style>
+</head>
+<body>
+
+<h1>2.3 Chroma 向量数据库</h1>
+<div class="subtitle">阶段二 · RAG 落地 · 建索引 + 语义检索</div>
+
+<div class="summary">
+  <b>一句话总结：</b>向量数据库 = 存向量 + 按语义检索的仓库。它本身不智能，检索准不准完全取决于喂给它的 embedding 模型好不好。
+</div>
+
+<h2>核心流程</h2>
+<div class="card">
+  <p style="font-size:14px;color:var(--muted)">
+    <span class="key">add</span>（文本 → 自动向量化 → 存）&nbsp;→&nbsp;
+    <span class="key">query</span>（问题 → 向量化 → 找距离最近的几条）
+  </p>
+  <div class="analogy"><b>类比：</b>图书馆语义检索——问"怎么解方程"，不搜"求根公式"三个字，而是按"意思"找到最相关的那张卡片。</div>
+</div>
+
+<h2>知识点</h2>
+
+<div class="card">
+  <h3>① 向量数据库 vs 传统数据库<span class="tag">概念</span></h3>
+  <table>
+    <tr><th></th><th>传统（MySQL）</th><th>向量（Chroma）</th></tr>
+    <tr><td>查询方式</td><td>精确匹配</td><td>语义相似</td></tr>
+    <tr><td>字面不同语义相同</td><td>搜不到</td><td>能命中</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <h3>② Chroma 四个核心操作<span class="tag">API</span></h3>
+  <pre>client = chromadb.Client()               # ① 客户端
+collection = client.create_collection(...) # ② 建库（英文名）
+collection.add(documents=..., ids=...)     # ③ 存（自动向量化）
+collection.query(query_texts=..., n_results=2)  # ④ 查</pre>
+</div>
+
+<div class="card">
+  <h3>③ 英文模型中文翻车（实测）⭐<span class="tag">最关键的发现</span></h3>
+  <p>问「怎么解一元二次方程」，返回顺序：</p>
+  <table>
+    <tr><th>排名</th><th>结果</th><th>距离</th></tr>
+    <tr><td>第 1 名</td><td class="wrong">勾股定理（错）</td><td>0.641</td></tr>
+    <tr><td>第 2 名</td><td class="right">二次方程求根公式（对）</td><td>0.799</td></tr>
+  </table>
+  <p style="margin-top:8px"><span class="key">核心认知：</span>向量库只是仓库，检索不准是 <b style="color:var(--red)">embedding 模型的锅</b>。默认英文模型分不清中文概念，论文要换 BGE 中文模型。</p>
+</div>
+
+<div class="card">
+  <h3>④ ids 是编号<span class="tag">易混淆</span></h3>
+  <p><code>ids</code> 和 <code>documents</code> 是两个列表，靠<strong>下标位置</strong>一一对应。</p>
+  <div class="analogy"><b>类比：</b>学生名单两列——"学号"（ids）+ "姓名"（documents）。ids 就是学号，不是"拆分方式"。</div>
+</div>
+
+<div class="card">
+  <h3>⑤ L2 距离 vs 余弦相似度<span class="tag">度量</span></h3>
+  <table>
+    <tr><th>度量</th><th>规则</th><th>在哪见过</th></tr>
+    <tr><td>L2 欧氏距离（Chroma 默认）</td><td>越小越相似</td><td>2.3 的 0.641</td></tr>
+    <tr><td>余弦相似度</td><td>越大越相似</td><td>2.1 的 0.75</td></tr>
+  </table>
+  <p style="margin-top:6px">L2 = 勾股定理推广到多维，应用岗了解"越小越相似"即可，不用系统学。</p>
+</div>
+
+<h2>核心代码</h2>
+<pre>collection.add(
+    documents=["二次方程的求根公式是...", "Python 是一种...", "勾股定理：..."],
+    ids=["math1", "python1", "math2"],
+)
+result = collection.query(query_texts=["怎么解一元二次方程"], n_results=2)</pre>
+
+<h2>踩坑</h2>
+<div class="warn"><b>#62</b> collection 名用中文 → InvalidArgumentError（名字只能英文/数字，documents 内容可中文）</div>
+<div class="warn"><b>#63</b> 默认模型从 AWS S3 下载（79MB）极慢 → 手动下载 onnx.tar.gz 放到缓存目录绕过</div>
+
+<h2>自测清单</h2>
+<ul class="check">
+  <li>能说出向量库 vs 传统库的区别（语义 vs 精确）</li>
+  <li>能说出 Chroma 四个操作</li>
+  <li>能说出 ids 是编号（靠下标对应）</li>
+  <li>能说出 L2 越小越相似、余弦越大越相似</li>
+  <li>能说出"检索不准是模型的锅，不是向量库的锅"</li>
+  <li>能说出论文要换 BGE 中文模型</li>
+</ul>
+
+</body>
+</html>

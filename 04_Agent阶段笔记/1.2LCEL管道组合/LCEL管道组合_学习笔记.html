@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LCEL 管道式组合 · 学习笔记</title>
+<style>
+  :root {
+    --bg: #1a1b26;
+    --card: #24283b;
+    --card2: #2f334d;
+    --text: #c0caf5;
+    --muted: #7982a9;
+    --blue: #7aa2f7;
+    --purple: #bb9af7;
+    --green: #9ece6a;
+    --orange: #e0af68;
+    --red: #f7768e;
+    --cyan: #7dcfff;
+    --code-bg: #16161e;
+    --border: #3b4261;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, "Microsoft YaHei", "PingFang SC", sans-serif;
+    line-height: 1.7; padding: 32px 20px 60px;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; }
+  h1 { font-size: 28px; font-weight: 600; color: var(--blue); margin-bottom: 8px; }
+  .subtitle { color: var(--muted); font-size: 14px; margin-bottom: 32px; }
+  h2 { font-size: 20px; font-weight: 600; margin: 40px 0 16px; padding-left: 12px; border-left: 4px solid var(--blue); }
+  h3 { font-size: 16px; font-weight: 600; margin: 20px 0 10px; }
+  p { margin: 8px 0; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px 24px; margin: 16px 0; }
+  .card.blue { border-left: 4px solid var(--blue); }
+  .card.green { border-left: 4px solid var(--green); }
+  .card.orange { border-left: 4px solid var(--orange); }
+  .tag { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 12px; margin-right: 8px; }
+  .tag.blue { background: rgba(122,162,247,0.15); color: var(--blue); }
+  .tag.green { background: rgba(158,206,106,0.15); color: var(--green); }
+  .tag.orange { background: rgba(224,175,104,0.15); color: var(--orange); }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px; overflow-x: auto;
+    font-family: "JetBrains Mono", "Fira Code", Consolas, monospace;
+    font-size: 13px; line-height: 1.6; margin: 12px 0;
+  }
+  code { font-family: "JetBrains Mono", "Fira Code", Consolas, monospace; }
+  .cmt { color: #565f89; }
+  .str { color: var(--green); }
+  .kw { color: var(--purple); }
+  .fn { color: var(--blue); }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 14px; }
+  th, td { border: 1px solid var(--border); padding: 10px 12px; text-align: left; }
+  th { background: var(--card2); color: var(--blue); font-weight: 600; }
+  .analogy { background: rgba(224,175,104,0.08); border: 1px dashed var(--orange); border-radius: 8px; padding: 10px 14px; margin: 12px 0; color: var(--orange); font-size: 14px; }
+  .muted { color: var(--muted); }
+  .key { color: var(--cyan); font-weight: 600; }
+  .pipe { color: var(--orange); font-weight: 700; font-size: 18px; }
+  .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 16px 0; }
+  @media (max-width: 640px) { .compare { grid-template-columns: 1fr; } }
+  .vs-box { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+  .vs-box.manual { border-top: 3px solid var(--red); }
+  .vs-box.lcel { border-top: 3px solid var(--green); }
+  .vs-title { font-weight: 600; margin-bottom: 10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>LCEL 管道式组合</h1>
+  <div class="subtitle">任务 1.2 · 学习笔记 · 2026-08-21 · 前置：LangChain 三大核心抽象</div>
+
+  <!-- 一句话 -->
+  <div class="card orange">
+    <p><strong>一句话总纲：</strong>LCEL 用 <span class="pipe">|</span>（管道符）把组件串成一条链，一次 <code>invoke</code> 跑完整条链，替代"手动三步走"。</p>
+  </div>
+
+  <!-- 核心对比 -->
+  <h2>一、核心对比：手动流水线 vs 自动传送带</h2>
+  <div class="compare">
+    <div class="vs-box manual">
+      <div class="vs-title" style="color:var(--red)">普通写法（手动，3 步）</div>
+<pre><code>prompt = template.format_messages(...)
+msg = llm.invoke(prompt)
+answer = msg.content</code></pre>
+      <p class="muted" style="font-size:13px;">每次手动做 3 步，中间变量手动传</p>
+    </div>
+    <div class="vs-box lcel">
+      <div class="vs-title" style="color:var(--green)">LCEL（自动，1 步）</div>
+<pre><code>chain = template | llm | StrOutputParser()
+answer = chain.invoke({...})</code></pre>
+      <p class="muted" style="font-size:13px;">先组装成链，以后一次跑完</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>三个新零件</h3>
+    <table>
+      <tr><th>新东西</th><th>是什么</th><th>类比</th></tr>
+      <tr><td><code>|</code> 管道符</td><td>串成链，输出自动接输入</td><td>接水管 / 传送带</td></tr>
+      <tr><td><code>StrOutputParser()</code></td><td>AIMessage 自动转字符串</td><td>自动帮你 .content</td></tr>
+      <tr><td><code>chain</code></td><td>串好的链，可 invoke</td><td>装好的流水线</td></tr>
+    </table>
+  </div>
+
+  <!-- 复用对比 -->
+  <h2>二、复用角度（最能说明问题）</h2>
+  <div class="card green">
+    <p>同一个模板问 3 个问题：</p>
+<pre><code><span class="cmt"># 普通写法：9 行，每次重复 3 步</span>
+prompt1 = template.format_messages(question=<span class="str">"什么是递归？"</span>)
+msg1 = llm.invoke(prompt1); a1 = msg1.content
+prompt2 = template.format_messages(question=<span class="str">"什么是闭包？"</span>)
+msg2 = llm.invoke(prompt2); a2 = msg2.content
+prompt3 = template.format_messages(question=<span class="str">"什么是装饰器？"</span>)
+msg3 = llm.invoke(prompt3); a3 = msg3.content
+
+<span class="cmt"># LCEL：4 行，组装 1 次 + 3 行调用</span>
+chain = template | llm | StrOutputParser()
+a1 = chain.invoke({<span class="str">"question"</span>: <span class="str">"什么是递归？"</span>})
+a2 = chain.invoke({<span class="str">"question"</span>: <span class="str">"什么是闭包？"</span>})
+a3 = chain.invoke({<span class="str">"question"</span>: <span class="str">"什么是装饰器？"</span>})</code></pre>
+    <div class="analogy">💡 LCEL 把"重复的流程"打包成一个可复用的 chain 对象，像传送带装一次反复用</div>
+  </div>
+
+  <!-- 完整代码 -->
+  <h2>三、完整代码</h2>
+  <div class="card blue">
+<pre><code><span class="kw">from</span> langchain_openai <span class="kw">import</span> ChatOpenAI
+<span class="kw">from</span> langchain_core.prompts <span class="kw">import</span> ChatPromptTemplate
+<span class="kw">from</span> langchain_core.output_parsers <span class="kw">import</span> StrOutputParser
+
+llm = ChatOpenAI(model=<span class="str">"deepseek-v4-flash"</span>, api_key=API_KEY,
+                 base_url=<span class="str">"https://api.deepseek.com"</span>)
+
+template = ChatPromptTemplate.from_messages([
+    (<span class="str">"system"</span>, <span class="str">"你是一个{role}，回答风格要{style}"</span>),
+    (<span class="str">"user"</span>, <span class="str">"{question}"</span>),
+])
+
+<span class="cmt"># LCEL：用 | 串成链（模板 → 模型 → 解析）</span>
+chain = template | llm | StrOutputParser()
+
+reply = chain.invoke({
+    <span class="str">"role"</span>: <span class="str">"编程老师"</span>,
+    <span class="str">"style"</span>: <span class="str">"通俗易懂，多用类比"</span>,
+    <span class="str">"question"</span>: <span class="str">"什么是递归？"</span>,
+})
+print(reply)   <span class="cmt"># 直接是字符串，不用 .content</span></code></pre>
+  </div>
+
+  <!-- 难点 -->
+  <h2>四、难点澄清</h2>
+  <div class="card">
+    <h3>1. `|` 到底做了什么？</h3>
+    <p class="muted">"自动传参"的语法糖：上一个零件的输出，自动变成下一个零件的输入。</p>
+    <h3>2. StrOutputParser 省掉了什么？</h3>
+    <p class="muted">省掉 <code>reply.content</code> 这一步，链最后接上它，invoke 直接返回字符串。</p>
+    <h3>3. 为什么 invoke 传字典？</h3>
+    <p class="muted">链的第一个零件是 PromptTemplate，需要字典来填空。</p>
+    <h3>4. LCEL 和普通写法的本质区别？</h3>
+    <p class="muted"><span class="key">普通写法 = 手动流水线</span>（每次自己递数据）；<span class="key">LCEL = 自动传送带</span>（装好一次，自动流）。</p>
+    <h3>5. LCEL 的三个价值</h3>
+    <p class="muted">复用（组装一次反复用）、可读（一眼看数据流）、可组合（链还能拼接，LangGraph 基础）。</p>
+  </div>
+
+  <!-- 自测 -->
+  <h2>五、自测清单</h2>
+  <div class="card">
+    <ul style="padding-left:20px; line-height:2;">
+      <li>`|` 做了什么？</li>
+      <li>StrOutputParser 省掉了什么？</li>
+      <li>为什么 chain.invoke 传字典？</li>
+      <li>LCEL 和普通写法的本质区别？</li>
+      <li>LCEL 的三个价值？</li>
+    </ul>
+  </div>
+
+  <p class="muted" style="text-align:center; margin-top:40px;">— 任务 1.2 完 · 下一步：LangGraph 状态图 —</p>
+</div>
+</body>
+</html>
