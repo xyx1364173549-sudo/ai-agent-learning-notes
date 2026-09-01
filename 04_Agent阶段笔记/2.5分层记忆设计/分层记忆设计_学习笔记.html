@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2.5 分层记忆设计 · 学习笔记（详细版）</title>
+<style>
+:root{
+  --bg:#0d1117; --panel:#161b22; --panel2:#1c2230; --line:#2d333b;
+  --text:#e6edf3; --muted:#8b949e;
+  --blue:#58a6ff; --green:#3fb950; --orange:#d29922; --red:#f85149;
+  --purple:#bc8cff; --cyan:#39c5cf;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--text);
+  font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;
+  line-height:1.75; padding:32px 20px 80px;
+}
+.wrap{max-width:960px;margin:0 auto}
+header{
+  border-bottom:2px solid var(--line); padding-bottom:20px; margin-bottom:28px;
+}
+.tag{
+  display:inline-block; background:rgba(88,166,255,.12); color:var(--blue);
+  border:1px solid rgba(88,166,255,.3); border-radius:20px;
+  padding:3px 14px; font-size:12px; letter-spacing:1px; margin-bottom:12px;
+}
+h1{font-size:27px; margin-bottom:10px}
+.sub{color:var(--muted); font-size:14px}
+h2{
+  font-size:20px; margin:38px 0 16px; padding-left:12px;
+  border-left:4px solid var(--blue);
+}
+h3{font-size:16px; margin:22px 0 10px; color:var(--cyan)}
+h4{font-size:14px; margin:16px 0 8px; color:var(--purple)}
+p{margin-bottom:12px}
+.muted{color:var(--muted); font-size:13px}
+.key{color:var(--orange); font-weight:600}
+.key-g{color:var(--green); font-weight:600}
+.key-r{color:var(--red); font-weight:600}
+.key-b{color:var(--blue); font-weight:600}
+.quote{
+  background:linear-gradient(90deg,rgba(88,166,255,.10),transparent);
+  border-left:4px solid var(--blue); border-radius:0 8px 8px 0;
+  padding:16px 20px; margin:18px 0; font-size:15px;
+}
+.card{
+  background:var(--panel); border:1px solid var(--line);
+  border-radius:10px; padding:20px; margin:16px 0;
+}
+.card.warn{border-color:rgba(248,81,73,.4); background:rgba(248,81,73,.05)}
+.card.ok{border-color:rgba(63,185,80,.4); background:rgba(63,185,80,.05)}
+.card.tip{border-color:rgba(210,153,34,.4); background:rgba(210,153,34,.05)}
+table{width:100%; border-collapse:collapse; margin:14px 0; font-size:13.5px}
+th,td{border:1px solid var(--line); padding:8px 10px; text-align:left}
+th{background:var(--panel2); color:var(--blue); font-weight:600}
+td{background:var(--panel)}
+tr:nth-child(even) td{background:var(--panel2)}
+pre{
+  background:#010409; border:1px solid var(--line); border-radius:8px;
+  padding:16px; overflow-x:auto; margin:14px 0;
+  font-family:Consolas,"Courier New",monospace; font-size:12.5px; line-height:1.6;
+}
+code{
+  background:rgba(110,118,129,.25); border-radius:4px;
+  padding:2px 6px; font-size:12.5px; font-family:Consolas,monospace;
+}
+pre code{background:none; padding:0}
+.flow{display:flex; gap:10px; flex-wrap:wrap; margin:16px 0}
+.flow .step{
+  flex:1; min-width:160px; background:var(--panel); border:1px solid var(--line);
+  border-radius:10px; padding:12px 14px;
+}
+.flow .step .n{
+  display:inline-block; width:24px; height:24px; line-height:24px; text-align:center;
+  background:rgba(88,166,255,.15); color:var(--blue); border-radius:50%;
+  font-size:13px; font-weight:600; margin-bottom:8px;
+}
+.flow .step .t{font-size:13.5px; font-weight:600; color:var(--text); margin-bottom:4px}
+.flow .step .d{font-size:12px; color:var(--muted)}
+ul,ol{padding-left:24px; margin:10px 0}
+li{margin:5px 0}
+.pit td:first-child{font-weight:600; color:var(--red)}
+.footer{
+  margin-top:40px; padding-top:16px; border-top:1px solid var(--line);
+  color:var(--muted); font-size:13px; text-align:center;
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="tag">阶段二 · 分层记忆 · 详细版</span>
+    <h1>2.5 分层记忆设计</h1>
+    <div class="sub">工作记忆（滑动窗口）+ 情景记忆（SQLite + 遗忘曲线）+ 语义记忆（知识图谱）→ 论文第 4 章创新点基座</div>
+  </header>
+
+  <div class="quote">
+    <strong>三层记忆</strong> = 工作记忆（记得住"刚才说了啥"）+ 情景记忆（记得住"学过什么、忘没忘"）+ 语义记忆（知道"知识间谁先谁后、下一步该学啥"）。三层互补，缺一不可。
+  </div>
+
+  <h2>〇、为什么不能只有一层记忆？</h2>
+  <div class="card">
+    <table>
+      <tr><th>只有一种记忆</th><th>会怎样</th><th>缺了什么</th></tr>
+      <tr><td>只记对话（工作记忆）</td><td>重启即失忆，学过的全忘</td><td>持久化</td></tr>
+      <tr><td>只存记录（情景记忆）</td><td>有流水账，但不知道知识点间的先后关系</td><td>关系结构</td></tr>
+      <tr><td>只有图谱（语义记忆）</td><td>知道知识结构，但不知道学生实际掌握多少</td><td>个人学情</td></tr>
+    </table>
+    <p class="muted"><span class="key">类比</span>：工作记忆 = 黑板（临时写，擦了就没了）；情景记忆 = 笔记本（长期保存，但是流水账）；语义记忆 = 课程大纲（先后顺序，先学啥后学啥）。</p>
+  </div>
+
+  <h3>三件套的数据流动（答辩会问）</h3>
+  <div class="flow">
+    <div class="step"><span class="n">1</span><div class="t">工作记忆</div><div class="d">对话 → 滑动窗口留最近 N 条 → 发给大模型当上下文</div></div>
+    <div class="step"><span class="n">2</span><div class="t">情景记忆</div><div class="d">学完沉淀 → SQLite 表 → 检索按遗忘曲线加权</div></div>
+    <div class="step"><span class="n">3</span><div class="t">语义记忆</div><div class="d">知识点+先修 → 两张表 → recommend_next 推荐下一步</div></div>
+  </div>
+
+  <h2>一、2.5a 工作记忆：滑动窗口</h2>
+  <div class="card">
+    <h3>痛点</h3>
+    <p>对话消息无限增长。如果每次都把<strong>全部历史</strong>发给大模型：</p>
+    <ul>
+      <li>token 爆炸 → 费用飙升（LLM 按 token 计费）</li>
+      <li>上下文被无关历史淹没 → 模型"忘"了当前重点</li>
+      <li>超过上下文窗口 → 直接报错</li>
+    </ul>
+    <h3>方案</h3>
+    <p>只保留两类消息：① <span class="key">system 提示</span>（角色设定，永远不丢）；② 最近的 <span class="key">N 条非 system 消息</span>（N = 窗口大小）。</p>
+    <pre><code>def sliding_window(messages, max_turns):
+    system = [m for m in messages if m["role"] == "system"]
+    others = [m for m in messages if m["role"] != "system"]
+    others = others[-max_turns:] if max_turns &gt; 0 else []  # 防 [-0:] 返回全列表
+    return system + others</code></pre>
+    <div class="card warn">
+      <p><span class="key-r">边界陷阱（本节第一坑）</span>：<code>others[-0:]</code> 等价于 <code>others[0:]</code>，<strong>返回整个列表</strong>！因为 <code>-0</code> 就是 <code>0</code>。窗口为 0 = "一条对话都不留"，必须显式钳制：<code>if max_turns &gt; 0 else []</code>。</p>
+      <p class="muted">类比：黑板写满要擦掉旧的。擦 0 行 = 把黑板全擦光，不是"擦 0 行 = 啥也没擦"。</p>
+    </div>
+    <h3>边界测试（跑给你看）</h3>
+    <table>
+      <tr><th>场景</th><th>输入</th><th>期望</th><th>结果</th></tr>
+      <tr><td>正常</td><td>max_turns=2</td><td>system + 最近 2 条</td><td>✅</td></tr>
+      <tr><td>窗口为 0</td><td>max_turns=0</td><td>只有 system</td><td>✅（有钳制才对）</td></tr>
+      <tr><td>负数</td><td>max_turns=-1</td><td>保守返回空</td><td>✅</td></tr>
+      <tr><td>窗口超大</td><td>max_turns=100</td><td>全部非 system 消息</td><td>✅（切片自动截断）</td></tr>
+    </table>
+  </div>
+
+  <h2>二、2.5b 情景记忆：SQLite + 遗忘曲线</h2>
+  <div class="card">
+    <h3>痛点</h3>
+    <ul>
+      <li><span class="key">要持久化</span>：学过的东西不能只在对话里，程序重启就没了。</li>
+      <li><span class="key">"学过 ≠ 记住"</span>：时间越久忘得越多，检索要按遗忘程度加权。</li>
+    </ul>
+    <p class="muted">SQLite 是<strong>文件型数据库</strong>——一个 <code>.db</code> 文件就是整个数据库，不需要装服务器，Python 自带 <code>sqlite3</code> 模块，零依赖。</p>
+  </div>
+
+  <div class="card">
+    <h3>方案 1：episodes 表持久化</h3>
+    <pre><code>CREATE TABLE IF NOT EXISTS episodes (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,  -- 自增主键，每行唯一编号
+    student_id TEXT NOT NULL,                      -- 哪个学生
+    topic      TEXT NOT NULL,                      -- 学了什么知识点
+    summary    TEXT NOT NULL,                      -- 内容摘要
+    difficulty REAL NOT NULL,                      -- 难度（0~1）
+    score      REAL NOT NULL,                      -- 掌握度得分
+    started_at TEXT NOT NULL DEFAULT (datetime('now'))  -- 学习时间（ISO 字符串）
+)</code></pre>
+    <p class="muted"><span class="key-b">为什么 started_at 用 TEXT？</span> SQLite 没有专门的日期类型，惯例存 ISO 字符串（如 <code>"2026-09-02 21:30:00"</code>），Python 端用 <code>datetime.fromisoformat()</code> 解析。<span class="key-r">不是 fromtimestamp()</span>——那是给"秒数时间戳"用的，喂 ISO 字符串会类型报错（<strong>本节第二坑</strong>）。</p>
+    <h4>save_episode：插入 + 拿回主键</h4>
+    <pre><code>def save_episode(conn, student_id, topic, summary, difficulty, score):
+    cur = conn.cursor()
+    cur.execute("""
+        INSERT INTO episodes (student_id, topic, summary, difficulty, score)
+        VALUES (?, ?, ?, ?, ?)
+    """, (student_id, topic, summary, difficulty, score))
+    conn.commit()          # 提交事务，写入才真正落盘
+    return cur.lastrowid   # 最后插入行的主键 id</code></pre>
+    <div class="card warn">
+      <p><span class="key-r">lastrowid 是什么（本节第三坑）</span>：<code>cur.lastrowid</code> = <strong>最后插入那一行的主键 id 值</strong>，<strong>不是"插了几条"</strong>。删掉数据后 id 不回退（AUTOINCREMENT 只增不减）。计数要看 <code>cur.rowcount</code>（受影响条数）或 <code>SELECT COUNT(*)</code>。</p>
+    </div>
+    <p class="muted"><span class="key-r">踩坑实例</span>：<code>save_episode</code> 签名参数顺序和调用不一致 → 数据静默存反列（topic 和 summary 互换），不报错、查出来才发现。<strong>函数参数顺序、SQL 列顺序、调用传参顺序三处必须对齐</strong>。</p>
+    <h4>query_episodes：查询 + 排序</h4>
+    <pre><code>def query_episodes(conn, student_id, limit):
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT id, started_at, topic, summary, score
+        FROM episodes WHERE student_id = ?
+        ORDER BY started_at DESC LIMIT ?
+    """, (student_id, limit))
+    return cur.fetchall()</code></pre>
+    <p class="muted"><span class="key">注意</span>：<code>ORDER BY started_at DESC</code> 按时间倒序。<strong>不写 ORDER BY 永远不要假设返回顺序</strong>（下面 2.5c 有 rowid 空洞演示）。</p>
+  </div>
+
+  <div class="card">
+    <h3>方案 2：艾宾浩斯遗忘曲线加权</h3>
+    <p>原理：记忆随时间<strong>指数衰减</strong>。距离学习时间越久，检索权重越低。</p>
+    <pre><code>import math
+from datetime import datetime
+
+def days_since(iso_str):
+    """ISO 字符串 → 距离今天的天数"""
+    dt = datetime.fromisoformat(iso_str)   # ✅ 不是 fromtimestamp！
+    return (datetime.now() - dt).days
+
+def decay_weight(days, lam):
+    """遗忘曲线权重：w = e^(-λ·days)"""
+    return math.exp(-lam * max(days, 0))   # days 取非负，防未来时间算出 &gt;1</code></pre>
+    <p><span class="key">math.exp(-x) 是什么</span>：就是 <code>e</code> 的 <code>-x</code> 次幂 <code>e^(-x)</code>。<span class="key">为什么是负数？</span>因为衰减曲线是"时间越久权重越低"——指数上的负号让函数值随 days 增大从 1 单调下降到趋近 0。<code>exp(0)=1</code>（刚学完权重最大），<code>exp(-∞)→0</code>（远古记忆权重趋近 0）。</p>
+    <p class="muted"><span class="key">max(days, 0) 防什么</span>：时间数据出错（如未来时间）时 days 为负，<code>e^(正数)&gt;1</code> 会放大权重。钳到 0 保证权重永远在 (0, 1]。</p>
+    <h4>检索排序：加权分 = 原始分 × 衰减权重</h4>
+    <pre><code>def search_episodes(conn, student_id, limit, lam=0.03):
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT id, started_at, topic, summary, score
+        FROM episodes WHERE student_id = ? ORDER BY started_at DESC
+    """, (student_id,))
+    rows = cur.fetchall()
+    scores = []
+    for r in rows:                                      # 每一条都要算 → 循环内
+        id_, started_at, topic, summary, score = r      # 元组解包：一行拆成 5 个变量
+        days = days_since(started_at)
+        weight = decay_weight(days, lam)
+        scores.append((score * weight, id_, topic, days, weight))  # append 在循环内！
+    scores.sort(reverse=True)                           # 全部算完才排一次 → 循环外！
+    return scores[:limit]</code></pre>
+    <div class="card warn">
+      <p><span class="key-r">本节第四坑（缩进）</span>：<code>append</code> 必须在循环<strong>内</strong>（每一条都要收集）；<code>sort</code>/<code>return</code> 必须在循环<strong>外</strong>（全部处理完才做一次）。<strong>口诀：每一条都要做的 → 循环内；全部完成后再做一次的 → 循环外。</strong></p>
+    </div>
+    <p class="muted"><span class="key">元组解包</span>：<code>id_, started_at, topic, summary, score = r</code> 把一行元组按顺序拆给 5 个变量。<strong>变量个数必须和列数一致</strong>，多一个少一个都报 ValueError。</p>
+    <h3>λ 翻转实验（论文第 7 章实验素材）</h3>
+    <p>λ 控制遗忘速度：<span class="key">λ 越大忘得越快</span>（更看重近期）；<span class="key">λ 越小越"重实力"</span>（原始得分主导）。</p>
+    <table>
+      <tr><th>λ</th><th>二次方程（60天前，原始60）</th><th>函数图像（38天前，原始38）</th><th>加权后排序</th></tr>
+      <tr><td>0.03</td><td>60 × e^(-1.8) = 60×0.165 ≈ 9.9</td><td>38 × e^(-1.14) = 38×0.319 ≈ 12.1</td><td>二次方程 ＞ 函数图像</td></tr>
+      <tr><td>0.01</td><td>60 × e^(-0.6) = 60×0.549 ≈ 32.9</td><td>38 × e^(-0.38) = 38×0.684 ≈ 26.0</td><td class="key">函数图像 ＞ 二次方程（翻转！）</td></tr>
+    </table>
+    <p class="muted">同一个数据库、同一个查询，只调 λ 就得到<strong>相反的排序结果</strong>。说明"遗忘参数"直接决定检索偏好——λ=0.03 优先捞"更久前但更扎实"的记忆，λ=0.01 优先捞"更近期"的记忆。这一张表就能当实验数据。</p>
+  </div>
+
+  <h2>三、2.5c 语义记忆：知识图谱（两张表）</h2>
+  <div class="card">
+    <h3>痛点</h3>
+    <p>情景记忆只能回答"学过什么"，回答不了"<strong>接下来该学什么</strong>"。因为系统不知道知识点之间的先后关系——先学因式分解才能学二次方程，先学二次方程才能学函数图像。</p>
+  </div>
+
+  <div class="card">
+    <h3>方案：一张"图" = 两张表</h3>
+    <p>真正的知识图谱通常用图数据库（Neo4j）。我们用 SQLite <span class="key">降级实现</span>：<strong>"点"一张表，"边"一张表</strong>——避开学图数据库，降低毕设难度，功能照样够。</p>
+    <p class="muted"><span class="key">类比</span>：knowledge 是<strong>地铁站</strong>（站点 + 人流量），prerequisites 是<strong>线路图上的连线</strong>（哪站到哪站）。少了任何一张都不成立。</p>
+    <table>
+      <tr><th>表</th><th>存什么</th><th>关键约束</th><th>类比</th></tr>
+      <tr><td>knowledge（点）</td><td>学生 × 知识点 × 掌握度</td><td>UNIQUE(student_id, topic)</td><td>地铁站 + 人流量</td></tr>
+      <tr><td>prerequisites（线）</td><td>先修关系 from → to</td><td>PRIMARY KEY(from_topic, to_topic)</td><td>线路图上的连线</td></tr>
+    </table>
+    <p class="muted"><span class="key-b">UNIQUE vs PRIMARY KEY</span>：主键一表只能有一个且不能为空；UNIQUE 约束可以有好几个、允许空值。点表用组合 UNIQUE（同学生同知识点唯一），边表用组合主键（同一条边唯一）。<strong>这两处约束是 upsert 能工作的前提</strong>——没有唯一约束，重复插入不报错，upsert 也没有"冲突"可处理。</p>
+  </div>
+
+  <div class="card">
+    <h3>写数据：upsert 两兄弟</h3>
+    <h4>① ON CONFLICT ... DO UPDATE（点表用，撞了要改）</h4>
+    <pre><code>INSERT INTO knowledge (student_id, topic, mastery) VALUES (?, ?, ?)
+ON CONFLICT (student_id, topic)           -- 撞到唯一键了？
+DO UPDATE SET mastery = excluded.mastery  -- 用新值把旧掌握度盖掉</code></pre>
+    <ul>
+      <li><span class="key">excluded</span>：SQLite 关键字，指<strong>那个想插进来、但被唯一键拦下的新行</strong>。<code>excluded.mastery</code> = 新传进来的掌握度</li>
+      <li>整套动作 = <span class="key">upsert</span>（update + insert）：有就改，没有就加</li>
+    </ul>
+    <p class="muted">类比：期末登记成绩单。学号+科目已有一行 → 不新增行，只把分数<strong>更新</strong>成新成绩；没有 → 新写一行。<span class="key-r">没有 ON CONFLICT 这句</span>，第二次对同一个 (student_id, topic) 执行 INSERT 会直接抛 <code>IntegrityError: UNIQUE constraint failed</code>。</p>
+    <h4>② INSERT OR IGNORE（边表用，撞了就算了）</h4>
+    <pre><code>INSERT OR IGNORE INTO prerequisites (from_topic, to_topic) VALUES (?, ?)</code></pre>
+    <p class="muted">同样撞主键，态度完全不同：<strong>直接跳过，不报错，也不覆盖</strong>。"因式分解→二次方程"这条边加两次，语义上就是同一条边，多写没意义。类比：往通讯录加联系人，已经有了就啥也不干。</p>
+    <div class="card tip"><p><span class="key">一句话区分</span>：<strong>成绩单撞了要更新（DO UPDATE），关系表撞了就忽略（OR IGNORE）。</strong></p></div>
+  </div>
+
+  <div class="card">
+    <h3>读数据：fetch 三形态</h3>
+    <table>
+      <tr><th>方法</th><th>返回什么</th><th>没数据时</th><th>什么时候用</th></tr>
+      <tr><td>fetchone()</td><td>单个元组 ("二次方程", 0.6)</td><td>None</td><td>get_mastery 查单个掌握度</td></tr>
+      <tr><td>fetchall()</td><td>元组列表 [("因式分解",0.9), ...]</td><td>[]</td><td>查一批知识点 / 先修</td></tr>
+      <tr><td>fetchmany(n)</td><td>元组列表，最多 n 条</td><td>[]</td><td>分页（现在用不到）</td></tr>
+    </table>
+    <div class="card ok">
+      <p><span class="key-g">关键认知</span>：<strong>数据库返回的每一行永远是元组，哪怕只有一个字段。</strong></p>
+      <pre><code>cur.fetchall()  →  [("因式分解",), ("全等三角形",)]   # 每行是单元素元组
+[r[0] for r in ...]  →  ["因式分解", "全等三角形"]      # 剥掉元组壳，只要字符串</code></pre>
+    </div>
+    <h4>为什么数据库给你元组而不是列表？</h4>
+    <ul>
+      <li><span class="key">不可改的快照</span>：给你列表你就能 <code>row[0] = 0.0</code> 手滑改掉，但改的只是 Python 里的拷贝，数据库纹丝不动——产生"我明明改了怎么没变"的错觉。元组想改都改不了，逼你想改必须走 SQL（UPDATE）。</li>
+      <li><span class="key">元组可当字典 key</span>：列表可变不能哈希；元组可以。以后写缓存、去重，元组直接塞 set/dict。</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>r[0] 是列下标，不是行下标（重要认知纠偏）</h3>
+    <pre><code>pres = [r[0] for r in cur.fetchall()]</code></pre>
+    <ul>
+      <li><span class="key">行下标</span> = "现在是第几行"——不用你写，<code>for r in rows</code> 每次循环<strong>自动换一行</strong></li>
+      <li><span class="key">列下标</span> = "取这一行的第几个字段"——<code>r[0]</code> 固定取<strong>第 0 列</strong>，不管 r 现在是哪一行</li>
+    </ul>
+    <p class="muted">读作：<strong>"每一行 r，都取它的第 0 列"</strong>。三行数据 → 三个 r[0] → 三个字符串。看起来"一样"，是因为语法一样，不是取的同一条。</p>
+    <p class="muted">类比：全班点名，老师喊"报一下你们的学号"——每个被点到的人（r 依次是第 1 个、第 2 个……）报的都是"学号"（第 0 列），你不会觉得老师只问了第一个人。</p>
+    <p class="muted"><span class="key-b">列数由 SELECT 决定</span>：<code>SELECT topic, mastery</code> → 每行 2 个元素，r[0]=topic、r[1]=mastery；<code>SELECT from_topic</code> → 每行 1 个元素，r[0] 就是唯一元素。<strong>跟 WHERE 无关，WHERE 只是筛行，不会加列。</strong></p>
+  </div>
+
+  <div class="card">
+    <h3>数据库返回顺序不保证（现场演示）</h3>
+    <p>实测：先插甲（rowid=1）、乙（2）、丙（3），删掉乙，再插丁——</p>
+    <pre><code>第一次查询:  甲(1) 乙(2) 丙(3)     ← 碰巧按插入顺序
+删乙、再插丁: 甲(1) 丙(3) 丁(4)     ← 2 号位空了，丁没有补进来</code></pre>
+    <p class="muted">删掉的乙那个位置（2）就<strong>空着</strong>，新插的丁拿到 rowid=4。数据库只保证每行有唯一编号，<strong>不保证返回顺序像数组一样连续</strong>。</p>
+    <div class="card tip"><p><span class="key">铁律</span>：不写 ORDER BY，就永远不要假设返回顺序。所以 recommend_next 取"掌握度最低"时要<strong>自己 sort</strong>：<code>candidates.sort()</code> 之后才是真的"最弱的"。</p></div>
+  </div>
+
+  <div class="card">
+    <h3>核心算法：recommend_next 两关判定——"够得着的最差的"</h3>
+    <pre><code>def recommend_next(conn, student_id):
+    cur = conn.cursor()
+    cur.execute("SELECT topic, mastery FROM knowledge WHERE student_id = ?", (student_id,))
+    rows = cur.fetchall()          # ① 先把"所有知识点"端回 Python 存好
+    candidates = []                # 空篮子：装"够得着"的候选
+    for topic, mastery in rows:
+        if mastery &gt;= 0.7:
+            continue               # 第一关：已掌握 → 跳过
+        # 第二关：查这个知识点的所有先修（查的是边表，跟掌握度无关）
+        cur.execute(
+            "SELECT from_topic FROM prerequisites WHERE to_topic = ?",
+            (topic,),
+        )
+        pres = [r[0] for r in cur.fetchall()]   # 剥壳：元组列表 → 字符串列表
+        ready = True               # 乐观假设：先假设够得着
+        for p in pres:             # 逐个先修把关
+            if get_mastery(conn, student_id, p) &lt; 0.7:
+                ready = False      # 有一个先修没学会 → 否掉
+                break
+        if ready:                  # 两关都过 → 收进篮子（必须与 for p 平级！）
+            candidates.append((mastery, topic))
+    if not candidates:
+        return None                # 没有候选
+    candidates.sort()              # 掌握度升序（弱 → 强）
+    return candidates[0][1]        # 返回最弱的那个</code></pre>
+    <h4>三层结构口诀（第四坑的升级版）</h4>
+    <div class="flow">
+      <div class="step"><span class="n">1</span><div class="t">第 1 层：遍历知识点</div><div class="d">每条都要做：判定1 已掌握跳过 → 查先修 → 乐观假设</div></div>
+      <div class="step"><span class="n">2</span><div class="t">第 2 层：逐个先修把关</div><div class="d">一个知识点的先修逐个查，有一个没学会就否掉</div></div>
+      <div class="step"><span class="n">3</span><div class="t">第 3 层：收尾</div><div class="d">全部处理完才排序返回（candidates 空 → None）</div></div>
+    </div>
+    <ul>
+      <li><span class="key">每条知识点都要做的 → 第 1 层</span></li>
+      <li><span class="key">一个知识点的先修逐个查 → 第 2 层</span></li>
+      <li><span class="key">全部弄完才做一次 → 第 3 层</span></li>
+    </ul>
+    <div class="card warn">
+      <p><span class="key-r">踩过的两个具体错法：</span></p>
+      <ol>
+        <li><code>for</code> 循环体只剩 <code>continue</code>，后面的 <code>cur.execute</code> 掉到循环外 → 循环空转三圈，topic 残留最后一个值"函数图像"，查出先修"二次方程"掌握度 0.6&lt;0.7 → ready=False → 返回 None。<strong>不报错，静默跑错，最阴险。</strong></li>
+        <li><code>if ready:</code> 缩进在 <code>for p</code> 里面 → 每个先修达标后都 append 一次。多先修场景下（如"三角函数"依赖"相似三角形"+"全等三角形"）同一个知识点被收集两次。<strong>当前数据只有一个先修看不出来，真实图谱里三四个先修是常态——本地全绿、上线才炸。</strong></li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>完整走查（测试数据逐步推演）</h3>
+    <p class="muted">知识点表（stu001）：因式分解 0.9 | 二次方程 0.6 | 函数图像 0.3<br>边表：因式分解 → 二次方程（先学因式分解才能学二次方程）；二次方程 → 函数图像</p>
+    <table>
+      <tr><th>知识点</th><th>第一关（掌握≥0.7？）</th><th>第二关（先修全达标？）</th><th>结果</th></tr>
+      <tr><td>因式分解</td><td>0.9 ≥ 0.7 → 跳过</td><td>根本没机会查</td><td>不候选</td></tr>
+      <tr><td>二次方程</td><td>0.6 &lt; 0.7 → 过关</td><td>先修=因式分解 0.9 ≥ 0.7 ✅</td><td class="key-g">候选 (0.6, 二次方程)</td></tr>
+      <tr><td>函数图像</td><td>0.3 &lt; 0.7 → 过关</td><td>先修=二次方程 0.6 &lt; 0.7 ❌ → 淘汰</td><td>不候选</td></tr>
+    </table>
+    <p><code>candidates = [(0.6, "二次方程")]</code> → sort → 返回 <span class="key-g">"二次方程"</span></p>
+    <div class="card ok">
+      <p><span class="key-g">为什么不是掌握度最低的"函数图像"（0.3）？</span>因为函数图像的先修"二次方程"只有 0.6 还没学会。硬推函数图像等于把学生往墙上撞——学不会。系统推荐的是"<strong>够得着的最差的</strong>"：先修全达标里挑掌握度最低的，保证"推了就能学会"。</p>
+    </div>
+    <h4>边界场景测试（全部跑过）</h4>
+    <table>
+      <tr><th>场景</th><th>构造</th><th>期望</th><th>结果</th></tr>
+      <tr><td>空表</td><td>不插入任何数据</td><td>None</td><td>✅</td></tr>
+      <tr><td>全部掌握</td><td>所有知识点 ≥0.7</td><td>None（没得学了）</td><td>✅</td></tr>
+      <tr><td>孤立知识点</td><td>无先修且 &lt;0.7</td><td>推荐它（无门槛=天然够得着）</td><td>✅</td></tr>
+      <tr><td>多先修部分未达标</td><td>C 依赖 X(0.9✅)、Y(0.4❌)</td><td>推荐 Y（C 被卡住，Y 无门槛）</td><td>✅</td></tr>
+      <tr><td>环状依赖</td><td>A→B、B→A</td><td>不崩溃（先修逐个查，环不死循环）</td><td>✅</td></tr>
+      <tr><td>重复更新掌握度</td><td>同一 (stu001, 二次方程) 再 upsert</td><td>只有一行，值被覆盖</td><td>✅</td></tr>
+      <tr><td>重复加边</td><td>同一条先修加两次</td><td>只有一行（OR IGNORE）</td><td>✅</td></tr>
+    </table>
+  </div>
+
+  <h2>四、贯穿知识点：SQLite 基础（数据库四件套）</h2>
+  <div class="card">
+    <h3>四件套：conn / cursor / execute / fetch</h3>
+    <p class="muted">类比：去图书馆查资料。</p>
+    <table>
+      <tr><th>代码</th><th>图书馆类比</th><th>干什么</th></tr>
+      <tr><td>conn = sqlite3.connect(...)</td><td>办了张借书证</td><td>建立到数据库文件的连接通道</td></tr>
+      <tr><td>cur = conn.cursor()</td><td>叫了个管理员跑腿</td><td>真正执行 SQL 的"手"</td></tr>
+      <tr><td>cur.execute(SQL, 参数)</td><td>把书单递给管理员</td><td>让他跑一趟，结果暂时端在手上</td></tr>
+      <tr><td>cur.fetchall()</td><td>把书从管理员手里接过来</td><td>结果拿回 Python，变成列表</td></tr>
+    </table>
+    <div class="card warn">
+      <p><span class="key-r">游标是"独臂服务员"——一次只能端一盘菜</span>：你 execute 第二次，第一盘结果就被自动收走。所以嵌套查询必须先 <code>fetchall()</code> 固化：</p>
+      <pre><code>rows = cur.fetchall()   # ← 先把"所有知识点"端走存好
+# 之后再 execute 查先修，就不会弄丢 rows</code></pre>
+      <p class="muted"><strong>先 fetchall 固化成列表，再进循环</strong>——SQL 嵌套查询的通用铁律。不存直接 <code>for t, m in cur:</code> 迭代游标，循环里再次 execute 时外层循环直接乱套。</p>
+    </div>
+    <h3>? 占位符：为什么不用 f-string？</h3>
+    <pre><code># 千万别这么写（f-string 拼接 SQL）
+f"SELECT ... WHERE student_id = '{student_id}'"
+
+# 要这么写（占位符）
+cur.execute("SELECT ... WHERE student_id = ?", (student_id,))</code></pre>
+    <ol>
+      <li><span class="key">防 SQL 注入</span>：用户输入被当纯数据处理，永远不会被当成 SQL 执行</li>
+      <li><span class="key">自动处理引号转义</span>：中文、标点、引号都不会把 SQL 撑爆</li>
+      <li><span class="key">数据库能缓存执行计划</span>：同一条 SQL 反复执行更快</li>
+    </ol>
+    <h3>(student_id,) 尾巴那个逗号不能省</h3>
+    <pre><code>cur.execute("... WHERE student_id = ?", (student_id,))
+#                                           ↑ 这个逗号</code></pre>
+    <p class="muted">参数第二项必须是<strong>元组</strong>。<code>(student_id)</code> 只是加了括号的字符串，不是元组；<code>(student_id,)</code> 才是。单元素元组的逗号是 Python 经典暗坑——和 <code>("因式分解",)</code> 单列查询结果是同一个规矩。</p>
+    <h3>事务：conn.commit()</h3>
+    <p class="muted">SQLite 默认开启事务。execute 只改了内存里的暂存，<strong>commit() 才真正写入文件</strong>。忘记 commit 的后果：程序正常结束（连接关闭自动回滚），数据"看起来写了"实际没落盘。</p>
+    <h3>进阶（先记着，毕业设计用得上）</h3>
+    <pre><code>conn.row_factory = sqlite3.Row   # 之后 row["topic"] 直接按列名取值</code></pre>
+    <p class="muted">给连接配一个"翻译官"，让每行从元组变成能按列名取的字典式对象，不用记"第 0 列是 topic 还是 mastery"。当前代码用 r[0] 完全没问题，这是"以后让代码更可读"的优化项。</p>
+  </div>
+
+  <h2>五、本节踩坑清单（汇总，复习必看）</h2>
+  <div class="card">
+    <table class="pit">
+      <tr><th>#</th><th>坑</th><th>表现</th><th>根治</th></tr>
+      <tr><td>1</td><td>[-0:] 切片</td><td>max_turns=0 返回整个列表</td><td>if max_turns &gt; 0 else []</td></tr>
+      <tr><td>2</td><td>fromtimestamp(ISO字符串)</td><td>类型报错</td><td>用 fromisoformat</td></tr>
+      <tr><td>3</td><td>lastrowid 当"插入条数"</td><td>误以为返回 2 条</td><td>它是最后插入行的主键 id；计数用 rowcount/COUNT(*)</td></tr>
+      <tr><td>4</td><td>循环缩进（两次）</td><td>静默跑错 / 只剩一条</td><td>append 循环内，sort/return 循环外</td></tr>
+      <tr><td>5</td><td>if ready: 缩进进 for p</td><td>多先修时重复收集</td><td>与 for p 平级</td></tr>
+      <tr><td>6</td><td>列名/占位符数量不匹配</td><td>4 values for 3 columns 崩溃</td><td>改列名时同步数 VALUES 的 ?</td></tr>
+      <tr><td>7</td><td>函数参数顺序不一致</td><td>数据静默存反列</td><td>签名/SQL 列/调用三处对齐</td></tr>
+      <tr><td>8</td><td>忘 commit()</td><td>数据没落盘</td><td>改完必 commit</td></tr>
+    </table>
+  </div>
+
+  <h2>六、论文定位</h2>
+  <div class="card">
+    <ul>
+      <li><span class="key">第 4 章 分层记忆</span>：三件套就是第 4 章核心创新点，工程已在 agent_project 落地（memory_working.py / memory_episodic.py / memory_decay.py / memory_semantic.py）</li>
+      <li><span class="key">第 7 章 实验</span>：λ 翻转实验（调节遗忘速度 λ 改变检索排序）可直接用作实验数据；边界测试（多先修/孤立知识点/环状依赖）可写成鲁棒性测试</li>
+      <li><span class="key">答辩话术</span>：recommend_next —— "不推荐最差的，推荐够得着的最差的"；SQLite 两张表降级实现知识图谱，是"用简单工程达成核心创新"的亮点（避开 Neo4j 被追问）</li>
+    </ul>
+  </div>
+
+  <div class="footer">2.5 分层记忆设计 · 详细版学习笔记 · 老周 &amp; 小轩轩</div>
+</div>
+</body>
+</html>
