@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="RFjj9jxVho9qUy0hRVQQ8t">
+<head data-page-node-id="BXZGQ3d8upysuaFK7Q5je8">
+<meta charset="UTF-8" data-page-node-id="J8mI071jUsJYzc9QDYAcfo">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" data-page-node-id="tf7h96qwEPG3fKzEQIa7Q0">
+<title>2.6 多 Agent 协作 · 学习笔记（详细版）</title>
+<style>
+:root{
+  --bg:#0d1117; --panel:#161b22; --panel2:#1c2230; --line:#2d333b;
+  --text:#e6edf3; --muted:#8b949e;
+  --blue:#58a6ff; --green:#3fb950; --orange:#d29922; --red:#f85149;
+  --purple:#bc8cff; --cyan:#39c5cf;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--text);
+  font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;
+  line-height:1.75; padding:32px 20px 80px;
+}
+.wrap{max-width:960px;margin:0 auto}
+header{
+  border-bottom:2px solid var(--line); padding-bottom:20px; margin-bottom:28px;
+}
+.tag{
+  display:inline-block; background:rgba(88,166,255,.12); color:var(--blue);
+  border:1px solid rgba(88,166,255,.3); border-radius:20px;
+  padding:3px 14px; font-size:12px; letter-spacing:1px; margin-bottom:12px;
+}
+h1{font-size:27px; margin-bottom:10px}
+.sub{color:var(--muted); font-size:14px}
+h2{
+  font-size:20px; margin:38px 0 16px; padding-left:12px;
+  border-left:4px solid var(--blue);
+}
+h3{font-size:16px; margin:22px 0 10px; color:var(--cyan)}
+h4{font-size:14px; margin:16px 0 8px; color:var(--purple)}
+p{margin-bottom:12px}
+.muted{color:var(--muted); font-size:13px}
+.key{color:var(--orange); font-weight:600}
+.key-g{color:var(--green); font-weight:600}
+.key-r{color:var(--red); font-weight:600}
+.key-b{color:var(--blue); font-weight:600}
+.quote{
+  background:linear-gradient(90deg,rgba(88,166,255,.10),transparent);
+  border-left:4px solid var(--blue); border-radius:0 8px 8px 0;
+  padding:16px 20px; margin:18px 0; font-size:15px;
+}
+.card{
+  background:var(--panel); border:1px solid var(--line);
+  border-radius:10px; padding:20px; margin:16px 0;
+}
+.card.warn{border-color:rgba(248,81,73,.4); background:rgba(248,81,73,.05)}
+.card.ok{border-color:rgba(63,185,80,.4); background:rgba(63,185,80,.05)}
+.card.tip{border-color:rgba(210,153,34,.4); background:rgba(210,153,34,.05)}
+table{width:100%; border-collapse:collapse; margin:14px 0; font-size:13.5px}
+th,td{border:1px solid var(--line); padding:8px 10px; text-align:left}
+th{background:var(--panel2); color:var(--blue); font-weight:600}
+td{background:var(--panel)}
+tr:nth-child(even) td{background:var(--panel2)}
+pre{
+  background:#010409; border:1px solid var(--line); border-radius:8px;
+  padding:16px; overflow-x:auto; margin:14px 0;
+  font-family:Consolas,"Courier New",monospace; font-size:12.5px; line-height:1.6;
+}
+code{
+  background:rgba(110,118,129,.25); border-radius:4px;
+  padding:2px 6px; font-size:12.5px; font-family:Consolas,monospace;
+}
+pre code{background:none; padding:0}
+.flow{display:flex; gap:10px; flex-wrap:wrap; margin:16px 0}
+.flow .step{
+  flex:1; min-width:160px; background:var(--panel); border:1px solid var(--line);
+  border-radius:10px; padding:12px 14px;
+}
+.flow .step .n{
+  display:inline-block; width:24px; height:24px; line-height:24px; text-align:center;
+  background:rgba(88,166,255,.15); color:var(--blue); border-radius:50%;
+  font-size:13px; font-weight:600; margin-bottom:8px;
+}
+.flow .step .t{font-size:13.5px; font-weight:600; color:var(--text); margin-bottom:4px}
+.flow .step .d{font-size:12px; color:var(--muted)}
+ul,ol{padding-left:24px; margin:10px 0}
+li{margin:5px 0}
+.pit td:first-child{font-weight:600; color:var(--red)}
+.footer{
+  margin-top:40px; padding-top:16px; border-top:1px solid var(--line);
+  color:var(--muted); font-size:13px; text-align:center;
+}
+</style>
+</head>
+<body data-page-node-id="NI492t9y34IkLMeNEV6P4U">
+<div class="wrap" data-page-node-id="iK66JUdtaetoK0Maq6eSFb">
+  <header data-page-node-id="ZQlZ1fdQqvtq6yFMV5S5iY">
+    <span class="tag" data-page-node-id="Qq3KWzgxf7QzFN5OpomAHA">阶段二 · 多 Agent 协作 · 详细版</span>
+    <h1 data-page-node-id="uc4a4CjjUYf6O4cfrSAUQM">2.6 多 Agent 协作</h1>
+    <div class="sub" data-page-node-id="K60x0YydwwkJIr5Uv1b4dL">LangGraph 编排 导师 / 出题 / 评估 / 规划 四 Agent 分工 → 论文第 5 章"动态任务规划"前置</div>
+  </header>
+
+  <div class="quote" data-page-node-id="Gf1qBvKkoMTEzr3GXcNfri">
+    <strong data-page-node-id="qG9wzAee6yPDd49w24iPoN">多 Agent 协作</strong> = 用 LangGraph 把一个"全能 Agent"拆成四个各司其职的 Agent（导师讲 → 出题考 → 评估分 → 规划下一步），节点之间靠<strong data-page-node-id="YoHb69OVcSXAcMVxBGUZqn">结构化的 State 字段</strong>传"接力棒"，条件边根据掌握度决定"重讲 / 推进 / 收工"，再用轮次计数器保证循环必然终止。
+  </div>
+
+  <h2 data-page-node-id="wSUD2M04FPJ7fFi5trnAj5">〇、为什么不能只用一个全能 Agent？</h2>
+  <div class="card" data-page-node-id="DlDUO1dfCjdwGipRbPhkpi">
+    <table data-page-node-id="eMCdHFfA4sMhMLIpqiB8lT">
+      <tr data-page-node-id="bLMJd362Uof8K3gEJHAUjW"><th data-page-node-id="LSQEPRQ2yoHPdNIRKCcYYw">痛点</th><th data-page-node-id="Ki5uoFVD7TTOmg0jPXpe4h">单全能 Agent</th><th data-page-node-id="FrpITP2GePvfOIiZsZJ5fZ">四 Agent 分工</th></tr>
+      <tr data-page-node-id="wX0oUVyaPZu1AU6xHlrrse"><td data-page-node-id="NQOihd3IrRb4qKssHiiWty">Prompt 冲突</td><td data-page-node-id="GejIC4nsi9ymjdeljVLYML">讲知识/出题/批改/规划四套人设塞一个提示词，互相打架</td><td data-page-node-id="XBfqr6fc8YUhqQpFbH3GHU">每人一套专属人设，互不干扰</td></tr>
+      <tr data-page-node-id="DKb4qNcJ77w0fxbRiDASvk"><td data-page-node-id="0inkkVSsDMEwqfkJFwMFYR">状态混乱</td><td data-page-node-id="wb70cNK3E3UqrNCukL88dL">讲完课顺手出题，出题人设污染讲课语气</td><td data-page-node-id="bhYGr8QQE67bXHRYQ98x3F">各管一段，交接清晰</td></tr>
+      <tr data-page-node-id="u67DhrANusSYOvljGkYftw"><td data-page-node-id="MquVu1s1vJvj66Sx23C3wn">难扩展</td><td data-page-node-id="6iougIK29zkuy16Ux31mhc">想加个"心理疏导 Agent"要改全图</td><td data-page-node-id="VyBIRgH8KOC9jZEBA1zNxm">加个节点 + 一条边就行</td></tr>
+    </table>
+    <p class="muted" data-page-node-id="FdRh6qoIllyp2XUlAyH4hV"><span class="key" data-page-node-id="lHayo981lgJqDEA6sqIlfE">类比</span>：医院科室——不会让一个医生既看门诊又做检验又发药。<span class="key" data-page-node-id="xNdvOKutz9BB9Pc1uWkpH3">每个环节专人做，质量才稳。</span></p>
+  </div>
+
+  <h3 data-page-node-id="lmCvola0iy9I6GFkUSczuz">四 Agent 流水线</h3>
+  <div class="card" data-page-node-id="DpccTk331nVylbYtpEvAMB">
+<pre data-page-node-id="TFD55B1CLvr8ZIuj7VnDnN">START → tutor(讲解) → quiz(出题) → eval(批改) ─┬─ mastery≥0.7 ──→ plan(规划) ─┐
+                                               ├─ 没学会,轮次&lt;3 → 回 tutor 重讲 │
+                                               └─ 3轮没学会 / 总轮≥5 → 收工 END ←┘</pre>
+    <table data-page-node-id="efp8CCeyMCq030Uochb8cE">
+      <tr data-page-node-id="VQ0i6XPuK0WBEaFkXbMULE"><th data-page-node-id="FCPbctLaGwD5OenopuPpxG">Agent</th><th data-page-node-id="F35DjpM8JwLhKjKcBdckbc">职责</th><th data-page-node-id="g7RzwF4WBFxrVEgq10a7Fn">产出（写入 State）</th></tr>
+      <tr data-page-node-id="TerijGDhnsNENjoPAQRRiz"><td data-page-node-id="mw54ESEvnNfoJU7jch9ndv">tutor 导师</td><td data-page-node-id="ltZBYEBBtBSxy5juocsjqK">讲解当前知识点</td><td data-page-node-id="0ETsTpzCasqe9rAjJiAxE1"><code data-page-node-id="TgHMm2wObbaIij87E4FC9G">lecture</code></td></tr>
+      <tr data-page-node-id="akFAz6XRYebiEFCSynBqlE"><td data-page-node-id="oSfOK8ktVPeSv7HuVsMV9O">quiz 出题</td><td data-page-node-id="1qC31Sb4TvIxX0cungESoe">按知识点出练习题</td><td data-page-node-id="QU239z71FMaH78I58GE4ia"><code data-page-node-id="fJK6VVxO8DgDiIU4WD6XHV">question</code></td></tr>
+      <tr data-page-node-id="bKfvmBrpDQcgUPFqIydxjc"><td data-page-node-id="VbXeotngFO8mJ8Dfcx5sCp">eval 评估</td><td data-page-node-id="ttmylazhIQCurwx4esgHzq">批改答案、打掌握度（最难）</td><td data-page-node-id="zAospCuDhsIhBGrRua0hgU"><code data-page-node-id="cNWbgJmnMUgjZLwZjR069G">feedback</code> + <code data-page-node-id="wVQOdqVXm59KNfpYfg5nGQ">mastery</code> + <code data-page-node-id="rFK46NHDYSPj8BQljQoyYf">round</code></td></tr>
+      <tr data-page-node-id="VR20xKQiwe36dynEotw3HQ"><td data-page-node-id="lwUjmJqgdBlPOskZrpKzeM">plan 规划</td><td data-page-node-id="HTPb2mFIEROipE2XA6EcRj">决定下一知识点</td><td data-page-node-id="rGPMDPFyAhMwa7kqtXzuPw"><code data-page-node-id="6xfSujVApNxANNwomI9WEB">next_topic</code>（顺手更新 <code data-page-node-id="LCZoQZM5hR9zDGjFsGiGf8">topic</code>）</td></tr>
+    </table>
+  </div>
+
+  <h2 data-page-node-id="fEXFcWhCKEQICQTf9rWYVf">一、对应知识点</h2>
+
+  <h3 data-page-node-id="65h0QTbDmPhJo6TVL8LBU9">1.1 从 1.5 到 2.6：三处架构升级</h3>
+  <div class="card" data-page-node-id="zMYDnDy5VkiBHN88rRk8km">
+    <table data-page-node-id="2dZN1idpB41auc9hHxFhmQ">
+      <tr data-page-node-id="pUE7yivS8FFDfwkOob9NxE"><th data-page-node-id="2VWHDCEzcvLuhNPEdgy3xM">维度</th><th data-page-node-id="PEZULq3eXsEzfsMGE9AtWd">1.5 单 Agent</th><th data-page-node-id="cLWdAcC2SJ2EEzJtbPmIw7">2.6 多 Agent</th></tr>
+      <tr data-page-node-id="qdD7RblUUPNcGrLSrfBYHU"><td data-page-node-id="yvqR49TJFQ1kTMI5o12Bog">State</td><td data-page-node-id="NXiWs7jdrRMqM1fJC305Ww">只有 <code data-page-node-id="ytabXPdhRBwjY6RV1IrDKc">messages</code>（对话流水账）</td><td data-page-node-id="rIyILyRHts8GK46IRHqCew">一堆<strong data-page-node-id="AjfAxhZBMn6ZytUye5i8Ho">具名字段</strong>（接力棒）</td></tr>
+      <tr data-page-node-id="Q3fZxPNXRqP4aRGgSNNjIS"><td data-page-node-id="MCssRM0tFISjsOCpoZKLX6">节点</td><td data-page-node-id="fJb426kS7gcZ3632xviFkD"><code data-page-node-id="6gsU34hPmrwFeAqbRVmprt">llm_with_tools</code>（带工具）</td><td data-page-node-id="GGhQTG50qzClDARtH1YGSK">带人设的普通 LLM</td></tr>
+      <tr data-page-node-id="FWiRBVU89v4sMdOJkEGFoF"><td data-page-node-id="ei47ANFbIhoCICAGSMBdqD">条件边</td><td data-page-node-id="EdhZxrEmgHChbma8Hr8lEV">判断"有没有 tool_calls"</td><td data-page-node-id="OwEe2sDX0tBG1T465ugsra">判断"学没学会"</td></tr>
+      <tr data-page-node-id="ewzGH42nu0KVKGrxEa9bbw"><td data-page-node-id="uJ4QIpdMmFmbIF3bC4Eq1D">循环</td><td data-page-node-id="jxhRfCevP1p9yIGmgDWMUg">call_model ↔ tool_node（技术循环）</td><td data-page-node-id="I9A9DhqzdOAQOqY7lkZ9x5">eval ↔ plan/retry（<strong data-page-node-id="T2FtyXhiKknCdBPFgRYEtO">业务循环</strong>）</td></tr>
+    </table>
+    <p class="muted" data-page-node-id="ps9S5kafUigcUfMYm9NeKE"><span class="key-b" data-page-node-id="mC4W7gDkZoDR16RujBG0oV">关键认知</span>：多 Agent 之间传的不是"聊天记录"，是<strong data-page-node-id="jTX2DX74itfOQLtGMBF9pc">结构化的接力棒</strong>——题目、答案、掌握度、下一知识点各有归属。</p>
+  </div>
+
+  <h3 data-page-node-id="FTCTrdSsdehI4kcNFDglye">1.2 State：接力棒字典（谁写谁读要记牢）</h3>
+  <div class="card" data-page-node-id="KHA1xJdvUGZnBQWCSLXK27">
+    <pre data-page-node-id="IUhhDNGP1Gx3uN71WEqpx2">class AgentState(TypedDict, total=False):
+    topic: str           # 当前知识点（plan 换新）
+    lecture: str         # tutor 写
+    question: str        # quiz 写
+    student_answer: str  # 外部传入
+    feedback: str        # eval 写
+    mastery: float       # eval 写（条件边的依据）
+    next_topic: str      # plan 写
+    round: int           # eval 写（防死循环出口）</pre>
+    <p class="muted" data-page-node-id="B6mRcaFzDZkGksT4Zrtb9i"><span class="key" data-page-node-id="EXxyEJV6xZOpQR6gIdjy6D">LangGraph 合并机制</span>：节点只 <code data-page-node-id="z5Q1WG9xAuoq0A1dBlhCPL">return</code> 自己改写的字段（一个 dict），LangGraph 自动合并回总 State，没返回的字段原样保留。</p>
+  </div>
+
+  <h3 data-page-node-id="JZlkhe0FApKHQgnXp5MtTo">1.3 节点模式：一个节点 = 人设 + 一次 invoke + return dict</h3>
+  <div class="card" data-page-node-id="z6UHd2cBnIJIeN8Dss5ICi">
+    <pre data-page-node-id="X6bskjoM76ayDfrGmo0H46">def tutor_node(state: AgentState) -&gt; dict:
+    resp = llm.invoke([
+        SystemMessage(content=TUTOR_PROMPT.format(topic=state["topic"])),
+        HumanMessage(content="请开始讲解"),
+    ])
+    return {"lecture": resp.content}   # 纯文本,不 json.loads!</pre>
+    <table data-page-node-id="V5nNKVc1vRxhEEeveybs85">
+      <tr data-page-node-id="hShZSx3kaWgD1eSpKFuLLi"><th data-page-node-id="kCuY3ngkOqRMJve1fMZM6p">节点</th><th data-page-node-id="X4L7R0nwNRuIAFhK1Wzsgq">prompt 要求</th><th data-page-node-id="maQeL1gDPHGuxFTqIpFB0e">resp.content 里是</th><th data-page-node-id="A90PWDPaNlscMcEw6fpfzl">处理方式</th></tr>
+      <tr data-page-node-id="xAHREVEdH8KKAsymeDrRvW"><td data-page-node-id="QqRY83uhROQLcgdDFS3b8G">tutor</td><td data-page-node-id="IjyKsseXW7iYUYBItK1lrd">3 句话讲解</td><td data-page-node-id="bGYnOWMRAp8xXDymCnw3MK">普通文本</td><td data-page-node-id="jM70DLFT4dS5folCJy9byC">直接用</td></tr>
+      <tr data-page-node-id="ao9of6siWO9CLkakRZDZgX"><td data-page-node-id="lZ4O7ToltHY9DDb0MzK4k7">quiz</td><td data-page-node-id="LD2xAogFQ5QvJDzofO5xjz">1 道题</td><td data-page-node-id="rsOFmP0C9nnlEh6p1c18zY">普通文本</td><td data-page-node-id="yRfg1PUrQnSpgKdmuI5ybA">直接用</td></tr>
+      <tr data-page-node-id="ShUpah7OTNMcFlWa1lg6c6"><td data-page-node-id="LbkLH4LAOhW5GcjnMQX7HE">eval</td><td data-page-node-id="hYGeMoI7wFMDXj79aAOdg3"><span class="key-r" data-page-node-id="hvE2Ea7jINkqhl1vNVHRZH">JSON</span></td><td data-page-node-id="P0UOhWGfDwW8muIl3bcZTt">JSON 文本</td><td data-page-node-id="hHCGudM1hSRrI5VHKcANPN"><code data-page-node-id="Ttgbj1MwtVAnjmotZmBkAT">json.loads</code> 解析（三层兜底）</td></tr>
+      <tr data-page-node-id="wW4vtGYnqvRUktBN2mAT6v"><td data-page-node-id="3tAHTMyAEwWLMW08ZLMiVJ">plan</td><td data-page-node-id="Wg56onBZLXVkjDEYz8Giym">只输出知识点名</td><td data-page-node-id="ArKzRB1RhEsLcFwYuMPe0l">普通文本</td><td data-page-node-id="hsAtZ9jvZ4O7vzrP6dxv1r"><code data-page-node-id="FyFwyEjwJnaDk2RCSX0DRn">strip()</code> 后用</td></tr>
+    </table>
+
+    <h4 data-page-node-id="Z3Jwbd4VDfvtCwVAWWXGmq">信封 vs 信纸：resp.content 永远是 str</h4>
+    <p data-page-node-id="9okHEmTtdgcr0BrpYtk3N2">HTTP 响应是 JSON（含 usage/id/choices），那是<strong data-page-node-id="Adxy7OAaHYkmJ0jK7DPTay">信封</strong>；LangChain 拆完信，<code data-page-node-id="08Jt9h4eDmjOfFACvGBgAv">resp.content</code> 是<strong data-page-node-id="4pxYJ4G2D0O3vskuOLmF7S">信纸</strong>——类型恒为 <code data-page-node-id="XADLHY6jBUnVxYJpR8cCiH">str</code>。模型输出"人话还是 JSON 文本"，<strong data-page-node-id="lB3GwJJ0EEGz3qZRIXeX1O">取决于 prompt 怎么要求</strong>，与返回值类型无关。</p>
+    <div class="card tip" data-page-node-id="DkLWsDYCbzyQxUlNEsGnLe"><span class="key" data-page-node-id="olMigTOz0SpEjC21O1IYO1">判据（可复用工程规矩）</span>：输出格式的契约写在 prompt 里，解析方式跟着契约走。prompt 没要求 JSON 就绝不 <code data-page-node-id="JJan4uCjBAop0kRBeUhmVQ">json.loads</code>；要求了才解析。</div>
+  </div>
+
+  <h3 data-page-node-id="7tbauLoM0FrRBZKwSNqhVA">1.4 条件边：四段式判定 + 防死循环</h3>
+  <div class="card" data-page-node-id="CNCGWtYLElO6ueCilLJqnv">
+    <div class="card warn" data-page-node-id="DUUHLqK5NW91PhiZACsbpJ"><strong data-page-node-id="OzEQXGvU4XXS6Eg1qnGQHo">两条铁律（本节的灵魂）</strong><br data-page-node-id="GsV5iFC3qw0GjvmqsWpgct">
+    铁律一：状态修改只发生在节点里，条件边只负责指路（<code data-page-node-id="u5mkUjjWyWa8NFKdADl7vk">round+1</code> 在 eval_node）。<br data-page-node-id="AfSIhUOhsyfrkYuDzB0mAH">
+    铁律二：循环计数器必须放在<strong data-page-node-id="q26BPw9e1k7KmPPzA8mXX9">所有路径的必经节点</strong>上——plan→quiz 回边<strong data-page-node-id="kgu66Q0kmlAjJer3Fyos04">绕过 tutor</strong>，round 放 tutor 会让"一直答对"死循环；quiz/eval 是汇合点，放 eval 语义最贴切（考完一次 = 学了一轮）。</div>
+
+    <h4 data-page-node-id="ELpozluXWYjU3mGUKtbtMm">死循环推演（round 放 tutor 的后果）</h4>
+    <pre data-page-node-id="hADvbMXAKfAsrOsMFbfEhy">1. tutor 进入      round = 0+1 = 1
+2. quiz → eval     mastery=0.9 → should_continue 判:≥0.7 → plan
+3. plan → quiz     ← 回边不经过 tutor! round 再没机会 +1
+4. eval → plan → quiz → eval → ... 无限循环,round 永远 = 1,硬上限失效</pre>
+
+    <h4 data-page-node-id="iccZ0J8Kh7gfqJ10Z83B3y">正确版本</h4>
+    <pre data-page-node-id="4EBCeRC3tFjB1wEZRey3UC">def should_continue(state: AgentState) -&gt; str:
+    r = state.get("round", 0)
+    m = state.get("mastery", 0.0)
+    if r &gt;= 5:                  # ① 总轮次硬上限(兜 plan 回边那条路)
+        return "end"
+    if m &gt;= 0.7:                # ② 学会了 → 去规划
+        return "plan"
+    if r &lt; 3:                   # ③ 没学会还有机会 → 回导师重讲
+        return "retry"
+    return "end"                # ④ 学了 3 轮还不会 → 收工</pre>
+    <p data-page-node-id="3j0ezAZk7xmFIjNWdYA1a0"><code data-page-node-id="rkP50n0CCAtZJy1PCbqMoC">round + 1</code> 写在 eval_node 的 return 里：<code data-page-node-id="F9lHQzBIM0qxlVUWeLbCUN">"round": state.get("round", 0) + 1</code></p>
+
+    <h4 data-page-node-id="Vh1YydjonKE6IWhHt8lI2K">终止性（论文/答辩素材）</h4>
+    <table data-page-node-id="83JVJeBGfMEDBldcCf2Bpr">
+      <tr data-page-node-id="uYIaDqBG863PB8LlzI62pM"><th data-page-node-id="UNNu7WhOqwwMJuJSNKKOgG">路径</th><th data-page-node-id="j7xOcoaEpvfArGUZOiPldB">经过 tutor?</th><th data-page-node-id="N4kDYcJT7o8Qm9jHTUUHJu">出口</th></tr>
+      <tr data-page-node-id="7oC7CkbUcRap5ccTX4zjbK"><td data-page-node-id="1rZepd2jGyF6duKgUhXat5">eval → retry → tutor → quiz → eval</td><td data-page-node-id="rNXOWu9g59bjHnMlvRYHWD">✅</td><td data-page-node-id="gEx7n3zIcrcTzl1KxACy5M">round 到 3 收工</td></tr>
+      <tr data-page-node-id="lvZe0AaterBDJGP1BrB1Id"><td data-page-node-id="zmfnk7bgG94AwWY7yx2Afs">eval → plan → quiz → eval</td><td data-page-node-id="fkeG8kA6EeXTMoIMFMe3R4"><span class="key-r" data-page-node-id="sgWGM1rXaef6HAAEArpq9r">❌ 绕过</span></td><td data-page-node-id="EdbUfjNBrIarFcdvKDM8gH">round 到 5 收工（硬上限）</td></tr>
+    </table>
+    <p class="muted" data-page-node-id="CclsMh3LiYemFzEBh2Hf7X"><span class="key" data-page-node-id="DftgsKXepfG0n7cTo4Egar">工业做法</span>：两个计数器——<code data-page-node-id="5VYoRsXjfskVOl2EACHjrE">round</code>（总轮次防死循环）+ <code data-page-node-id="nhT5Vpa8R850BBcPb4LPnj">retry_count</code>（当前知识点重讲次数，换知识点清零）。一个 round 顶两个用是教学简化，第 5 章可展开。</p>
+  </div>
+
+  <h3 data-page-node-id="mgTWxJyisMVjoHppGBcGvZ">1.5 eval_node：三层兜底 + 钳制（本节最难的函数）</h3>
+  <div class="card" data-page-node-id="Pl9PoeTVflx3zLNU794fHP">
+    <pre data-page-node-id="QcdDyjkvZImjXx3I0BTCb1">def eval_node(state: AgentState) -&gt; dict:
+    resp = llm.invoke([SystemMessage(content=EVAL_PROMPT.format(
+            topic=state["topic"],
+            question=state.get("question", ""),
+            answer=state.get("student_answer", ""),
+        )), HumanMessage(content="请批改这份答案")])
+    text = resp.content.strip().replace("```json", "").replace("```", "")   # ① 剥壳
+
+    try:                              # ② 正常路径:json.loads
+        data = json.loads(text)
+        mastery = float(data["mastery"])
+        feedback = data.get("feedback", "")
+    except Exception:                 # ③ 备用:正则抠第一个数字
+        m = re.search(r"\d\.?\d*", text)
+        mastery = float(m.group()) if m else 0.0
+        feedback = text[:50]
+
+    mastery = max(0.0, min(mastery, 1.0))   # ④ 钳制:锁进 0~1
+    return {"feedback": feedback, "mastery": mastery,
+            "round": state.get("round", 0) + 1}</pre>
+
+    <h4 data-page-node-id="MV5OHlXQNSMi2WOKTeq0zH">① 正则 \d\.?\d*</h4>
+    <p data-page-node-id="rP0p8HAvo9xa50Vwyp7f9q"><code data-page-node-id="W00vgNFDVxDH0AEOCST99e">\d</code> 一个数字；<code data-page-node-id="Tc0MUgDRtTn2bySA3lUbhx">\.</code> 真正的点（<code data-page-node-id="ORUD9fhsT3fpUwxvui54aP">.</code> 在正则里是"任意字符"要转义）；<code data-page-node-id="DW0lny2Lz8NK605NMWcCly">?</code> 可有可无；<code data-page-node-id="2q6Zued0mqGxrl7204wCVF">\d*</code> 零或多个数字。匹配 <code data-page-node-id="NcEUErIKhAmLlRZL9PdEyz">8</code>/<code data-page-node-id="UeWGfL6sCS5qwDTB2M5JK8">0.8</code>/<code data-page-node-id="uRjxe9mXM9iK1eS3l0ZO3P">0.85</code>。<code data-page-node-id="nMeS9N9OWp5bK0lsW64nI4">re.search</code> 找到返回匹配对象，<code data-page-node-id="CA1pz17xm1ADBFPtuVrnhK">.group()</code> 取字符串；找不到返回 <code data-page-node-id="mo0gx8zuGbKL4Kwn9fnxQ0">None</code>。</p>
+
+    <h4 data-page-node-id="ktzLSfRdsvkju5JhkiB8vm">② try/except 接异常，不是 if 接</h4>
+    <p data-page-node-id="IE5AHbgMz1ptNLcLpZo6pO"><code data-page-node-id="YVP3xRfxfpGzoNRAyjcM23">json.loads</code> 解析失败是 <span class="key-r" data-page-node-id="rkl4Wul6FrrH5PzUIVulvq">raise（打断程序）</span>，不是返回空值——所以不能用 if/elif/else 接它。类比：钥匙卡住换备用钥匙（正则），还不行就撬锁（默认 0.0）。</p>
+
+    <h4 data-page-node-id="UwE0DPXdflvChM37RPx5cm">③ 钳制 —— prompt 是请求，不是保证</h4>
+    <table data-page-node-id="mXnEUnPuzxW4D807ETiNBg">
+      <tr data-page-node-id="CJfMlP2kdUdxkEe1tpJdCJ"><th data-page-node-id="Klh0Q2wY0AZCuM71sBJqYn">模型实际给的</th><th data-page-node-id="Q1WHFh9BULBtsNxdEtKtEf">不钳制</th><th data-page-node-id="pVsbHkfSzvmzd1BGbYYOH2">钳制后</th><th data-page-node-id="GX386f0DI7zXtryFoucAHO">说明</th></tr>
+      <tr data-page-node-id="ofvuW611a2bLPrsKJkuDlc"><td data-page-node-id="FKgkOIkhYnSr5kQ5yGCFnK"><code data-page-node-id="4lWUrx70X9wOWTWOARlRXB">{"mastery": 0.8}</code></td><td data-page-node-id="Q1lXUvu7CDGIxprhCaAtny">0.8</td><td data-page-node-id="1Zq7xUBIj2QUar6XKHMIyT">0.8</td><td data-page-node-id="zvKdWr0xCmTDcB0NsaBNcE">正常值，没被误伤</td></tr>
+      <tr data-page-node-id="IPRd6o7Y8Wh5vBQRhD4H26"><td data-page-node-id="rw75hbmUhCmG71wqzoiNQr"><code data-page-node-id="Z17eUAwPthKIIir6X5ohna">{"mastery": 85}</code>（百分制）</td><td data-page-node-id="kFYp9MU2Sq8xEnP6wuJqeK"><span class="key-r" data-page-node-id="M5ZX2BnrESGgKTiCGbghGe">85.0</span></td><td data-page-node-id="SFUCjHp0mgsHd5Le1jXEMZ">1.0</td><td data-page-node-id="5e6QBrE8uvZtadoyKhRKu6">85 ≥ 0.7 会误判"学会"</td></tr>
+      <tr data-page-node-id="YzBGJnYoBlWGVXRDHUqoTk"><td data-page-node-id="pZj7GeYuVQATal5VWbbXLd">"我给 85 分"</td><td data-page-node-id="L0XA378TyTvohIvHWcdJMx"><span class="key-r" data-page-node-id="DBDNjuAGH4XGKimtzVyrMZ">85.0</span></td><td data-page-node-id="sbr3KIeLMaF1A43WKrpcfk">1.0</td><td data-page-node-id="9x8M7JmOUICvwEZsyhJFCc">同上</td></tr>
+      <tr data-page-node-id="fwXySQbIlO0KKLtoDzOVAo"><td data-page-node-id="TEKmX9oON8HIbeccRrAUOu">"第 3 题答案正确"</td><td data-page-node-id="uTAZSy6XvOm5mmP2O0JnK6"><span class="key-r" data-page-node-id="z4C6CxxatL7o0cqBnhiiQf">3.0</span></td><td data-page-node-id="oDBubzm3EGF5Gov6dyZECE">1.0</td><td data-page-node-id="vZ1DoN0eZwB4Epk8MnoXdJ">正则抠到的是题号</td></tr>
+      <tr data-page-node-id="uAGCK9p4l66D12KGjQoBR5"><td data-page-node-id="ADdHwdFNpnp1fmuLFrNJfv"><code data-page-node-id="W9deYOVp7BxSPBtPXs1DZB">{"mastery": -0.2}</code></td><td data-page-node-id="fa5LlKwyDn2uy5FjtHm0Mw"><span class="key-r" data-page-node-id="WSScUMiakzh6mjH4nBQs2u">-0.2</span></td><td data-page-node-id="RfqOLWgHf1dGRbrpevM5G3">0.0</td><td data-page-node-id="623548uTHRhRrKvtvAzcen">负数永远走 retry 重讲到天荒地老</td></tr>
+      <tr data-page-node-id="McdaTjh0lZ2wTBFbwig1vM"><td data-page-node-id="UPBtPVtFdCpFKcm9bfBkeX"><code data-page-node-id="LHB7WOnsgfc9yXHLLAv5iF">{"mastery": 1.5}</code></td><td data-page-node-id="hIJEN04LajB5yNC20rkHnI"><span class="key-r" data-page-node-id="sLB19jI5MEFAGGjE9yTJWd">1.5</span></td><td data-page-node-id="JXCDjGKqEjhABT33p0O3KK">1.0</td><td data-page-node-id="GTIJCEHcqIkKzIpFSXCh4i">超范围</td></tr>
+    </table>
+    <div class="card tip" data-page-node-id="clEW6nbhxavWZe2miplHo0"><span class="key" data-page-node-id="JPGok8aOiLdUtslS9ncNwF">类比</span>：prompt 写"0~1"像前台提示牌，<code data-page-node-id="IyuuKs69lLlAWtQOmV5GzL">max/min</code> 像门口安检机——<strong data-page-node-id="2n3iDH8yvBOVaJ71RMGeF2">提示牌防君子，安检机防意外，真实系统两层都要</strong>。诚实补充：钳制是"保命不保准"（85→1.0 而非 0.85），更严谨做法是 <code data-page-node-id="L02cBAocYIGGRZd0JR12Si">if 1 &lt; mastery &lt;= 100: mastery /= 100</code>，留给 2.7。</div>
+  </div>
+
+  <h3 data-page-node-id="6aFnY8OxGAaUtwpuAy7xEU">1.6 搭图五步</h3>
+  <div class="card" data-page-node-id="1hEaLWWpG7w3fdBHP1Yy4q">
+    <pre data-page-node-id="T76MtOFDXpncgJmPCcVDCz">graph = StateGraph(AgentState)
+graph.add_node("tutor", tutor_node)          # ① 注册 4 个节点(漏一个 → 编译报
+graph.add_node("quiz", quiz_node)            #    "Found edge starting at unknown node")
+graph.add_node("plan", plan_node)
+graph.add_node("eval", eval_node)
+graph.add_edge(START, "tutor")               # ② 固定边
+graph.add_edge("tutor", "quiz")
+graph.add_edge("quiz", "eval")
+graph.add_conditional_edges("eval", should_continue,   # ③ 条件边 + 映射表
+    {"plan": "plan", "retry": "tutor", "end": END})
+graph.add_edge("plan", "quiz")               # ④ 循环回边(绕过 tutor!)
+app = graph.compile()                        # ⑤ 编译</pre>
+    <p class="muted" data-page-node-id="ksW1gw2pjdZXxhXLlwNzhK"><span class="key" data-page-node-id="4Xi6HBnUnqkYrXw06FqEHx">注意</span>：<code data-page-node-id="m4IE15RGHe9PahaxpFDAP5">add_node</code> 注册 ≠ <code data-page-node-id="jsh7Kz2iFyQmlLohR1MYrd">add_edge</code> 连边，两个都不能漏。LangGraph 只在 compile() 时检查"边指向的节点是否存在"。</p>
+  </div>
+
+  <h3 data-page-node-id="WdUbGcUoVybUQ3wZkQPuWD">1.7 留给 2.7 的设计缺口（本章最有价值的产出）</h3>
+  <div class="card" data-page-node-id="ah1yHKacWaR7WHq45paDSj">
+    <table data-page-node-id="1B66r9I7cdmC1ecuSbtJo2">
+      <tr data-page-node-id="VEDne9uTIiqC6SFPWdAIyN"><th data-page-node-id="FAuALflW4wRgmq7b4XKTan">缺口</th><th data-page-node-id="A4DWTyHGSD21ERV1Uz6lgL">现象</th><th data-page-node-id="3WbVAIeGBi6OEG4ucl5RvI">2.7 的正解</th></tr>
+      <tr data-page-node-id="FsLdxNDsP7VA8Z6BMchwWZ"><td data-page-node-id="X8HnEAlHZ6hmoDb25DBRwJ">规划 Agent 没有"结束"信号</td><td data-page-node-id="MA93zK3Gadg88rCDm764x4">学完最后一个知识点，plan 输出"无"，图不停止，白烧一轮靠 round≥5 兜底</td><td data-page-node-id="cPGM2ZPhX2KU6Fz1yBJY0B">规划输出结构化决策：<strong data-page-node-id="8kPXBPkDx0X9yEqa28XnxD">推进 / 巩固 / 重学 / 结束</strong>，结束交条件边直接 END</td></tr>
+      <tr data-page-node-id="L00u5TQf3sOstoYUESwW4s"><td data-page-node-id="UpsCzrc6Q39zVlCXx37pzy">mastery 在 plan 里区分度有限</td><td data-page-node-id="XVAlsRwQNxmwAF1F7XVfNq">should_continue 已用 0.7 分流，进 plan 的 mastery 恒 ≥0.7</td><td data-page-node-id="IGsZBSiKT4mlbrN5djULI9">2.7 里 mastery 才真正决定"推进/巩固/跳级/回退"路径</td></tr>
+    </table>
+  </div>
+
+  <h2 data-page-node-id="hkDjaSAofs13zZy8nofpnM">二、测试与验收</h2>
+  <h3 data-page-node-id="1q75MCw2K3i0unKsCxE9Wv">三场景走查（真实运行输出）</h3>
+  <div class="card" data-page-node-id="6cQ0Kp8wpa5wiIZ6gBoTGr">
+    <table data-page-node-id="WIUnBsV86z51gqwzEi4MaB">
+      <tr data-page-node-id="Rmg6hOQGISH5n0Z908F8Ny"><th data-page-node-id="yx1xKxlU27yfQSCasueAYj">场景</th><th data-page-node-id="b6ngs5Eo5WyphieJmc7tbU">输入</th><th data-page-node-id="lRW5at0iBCorhN5KDAvGdS">实际路径</th><th data-page-node-id="XlBlUO8iOtFM8hTD9e4MUy">结果</th><th data-page-node-id="ON7vOhlIDrqNHYeRyvSSl3">说明</th></tr>
+      <tr data-page-node-id="odb6l3ZdojCoxDUCL1ZvdC"><td data-page-node-id="4NGEDzq5t9vRfEb0ZakiKh">A 随机出题+固定答案</td><td data-page-node-id="Qa1TCqbqRzxnROFC8tQrvY">答案写死但题随机 → 错配</td><td data-page-node-id="Zi7UesCsiRfK8lh7deIbX2">retry×…→end</td><td data-page-node-id="0RHnADY6sKa1j9p5PW1bJv">掌握度 0.0</td><td data-page-node-id="2GAHCzDj867bqpVb8AqKNx">演示数据缺陷，不是 bug</td></tr>
+      <tr data-page-node-id="HxvyNUygoQNOVOCBuec14B"><td data-page-node-id="kcvuqXDj4DFnXUAXaZVedB">B 答错</td><td data-page-node-id="WZHKW01tuGiVOBegFEFEZ9">"不会"</td><td data-page-node-id="h56iYjlHlib0Rj5WppiCFT">retry×2 → end</td><td data-page-node-id="OtfSRJg4mMIie7nhPVIB0h">0.0，<span class="key-g" data-page-node-id="eBlcN94Qr4KaSoRa6tA99V">round=3 正常停</span></td><td data-page-node-id="5PelwpDUevqJjKjmWHEnbA">防死循环出口生效 ✅</td></tr>
+      <tr data-page-node-id="hTmRIW1d1VuBx2PFBHm42p"><td data-page-node-id="ai97SpEL04useqbAJC41sQ">C 固定题+正确答案</td><td data-page-node-id="X9MWcTJwi12ffRHawkicVC">预置 question，答对</td><td data-page-node-id="ffQ2xroh9iGlKaFV5d8yzX">plan ×…→ round≥5 停</td><td data-page-node-id="6C5GxxqenJIiNDZwtiXsBi">1.0，推进到下一知识点</td><td data-page-node-id="RXDCxJLgTD037JAisJZ86B">演示 plan 分支要固定题目</td></tr>
+    </table>
+    <p class="muted" data-page-node-id="ACAFE8VAEOvDSVyvthTWAo">演示 plan 分支的做法：<code data-page-node-id="vrp9YzbRxYtekJcVRPBMV7">quiz_node</code> 加一行 <code data-page-node-id="6O8qgwWddfvqANOAEm8T3G">if state.get("question"): return {}</code>——外部已有题目就不生成。</p>
+  </div>
+
+  <h3 data-page-node-id="bBUuHGwAFh62cEJKZJ7O0D">边界测试 13/13（方法：桩函数替掉 LLM）</h3>
+  <div class="card" data-page-node-id="uJu4Gjv5lLtjYXBWxIWkhz">
+    <p class="muted" data-page-node-id="G6c48hYlQu5cb5IKjxBnN9"><span class="key" data-page-node-id="QDaEleaiCQflNTI2G2AfdO">测试思想（面试可讲）</span>：把 tutor/quiz/plan 换成返回固定值的桩函数（stub），只测"图怎么走"、不测"模型说啥"——不烧 API、结果可复现。这就是单元测试里"隔离外部依赖"的思想。</p>
+    <table data-page-node-id="rCrQGc9dg2FbcqaMhz5Fv2">
+      <tr data-page-node-id="Y9A7kIXkV6gOgstdAh6v4f"><th data-page-node-id="laGaSAO3ZyTJjXAdkv8v14">场景</th><th data-page-node-id="HWuklxm8CuoG8fAIX9aWeM">验证点</th><th data-page-node-id="eihevZm8gimpE3p9FykrM4">结果</th></tr>
+      <tr data-page-node-id="N6eEmzLVwkNUIQfDUQN4C3"><td data-page-node-id="d297pTZVjtE4leUkF9i2gX">一直答对（0.95）</td><td data-page-node-id="sfyyM466nLD7ZuFB820UJz">round 到 5 停（不死循环）+ 进 plan + next_topic</td><td data-page-node-id="RwxjkDOBxPGINQxTLU1ysT">✅</td></tr>
+      <tr data-page-node-id="QfAn2oUCkindNQSLVlttmS"><td data-page-node-id="nY64QWug0xGtuEucqJWUE9">一直答错（0.2）</td><td data-page-node-id="yWgJAVSH1YKlaSSI0Q9KA2">round 到 3 收工 + plan 0 次 + tutor 3 次</td><td data-page-node-id="jZ2jVbOIZUUfqowa66ADvx">✅</td></tr>
+      <tr data-page-node-id="kvAx6TXDRZk2D6NRkv5OwT"><td data-page-node-id="0bJL9KTtPfrBmC2Z6qpNda">先错两次再对</td><td data-page-node-id="eYaqRNP3WVtdCpVrpmyVZb">最终 0.9 + plan 2 次</td><td data-page-node-id="TQ6bRT4BWrmR9GOATFuvmy">✅</td></tr>
+      <tr data-page-node-id="ze9Ld3KGFsoNbOIh2NefhC"><td data-page-node-id="XD0Bik3OSCMr5sxhl7nRsC">```json 包裹</td><td data-page-node-id="CDau92CGtnYVXG8ImJFGnP">剥壳解析出 0.85</td><td data-page-node-id="ZZsOIB2I5WhajJLdik3kMv">✅</td></tr>
+      <tr data-page-node-id="SF7RI9MzhoLvsi8CiLai1i"><td data-page-node-id="It7r1tAzefkIZFRuEL9kId">纯文本"大概 0.6 分"</td><td data-page-node-id="HDPEyPGP5luVClQrF0bfzZ">正则抠出 0.6</td><td data-page-node-id="wlK1308qmn08aTlGAZRX1c">✅</td></tr>
+      <tr data-page-node-id="1eAeiEEMV5IA3o0Pg4YnKn"><td data-page-node-id="WnJuj8PS4udIkjnD8QNDMF">无数字文本</td><td data-page-node-id="kVjDUYedBBI0J8rdxrNt5W">兜底给 0.0（不崩）</td><td data-page-node-id="pKUnuw0QOMzukWWYCNs9DM">✅</td></tr>
+      <tr data-page-node-id="h3wX3zEvvGP8iSQKuqWn1Y"><td data-page-node-id="TJak2mVB3aREzmz2dBrlW4">百分制 80</td><td data-page-node-id="7TMfzhSTyuOEvrzuC6VDLZ">钳制到 1.0</td><td data-page-node-id="OL4yNxFzWGeUKo4D5o90F3">✅</td></tr>
+      <tr data-page-node-id="vfJp3tLkFUP8NRFHc1y3lv"><td data-page-node-id="0R5MX4yIvfX6OCY31pex5D">round 自增</td><td data-page-node-id="38LOzQya8sEJQeA9X98LVU">每批改一次 +1</td><td data-page-node-id="Dyq27WBaamNyyKdebTZPJj">✅</td></tr>
+    </table>
+    <div class="card tip" data-page-node-id="nyQZsChAeTckgZtTb2miz8"><span class="key" data-page-node-id="h3ZpBM5Q2eyOnRxQuNad2n">排错插曲</span>：场景 3 一度判 FAIL——最后发现是测试脚本的<strong data-page-node-id="0T0kLuqBuFf1VmRe8nMN7o">期望值算错了</strong>（plan 应被调用 2 次而非 3 次），代码本身是对的。<strong data-page-node-id="ywwdWepjFmpT4Zl4hdWMkF">期望值错 ≠ 代码错，先走查再改代码。</strong></div>
+  </div>
+
+  <h2 data-page-node-id="fvzfNl6nw9TsaAGuCyxh2K">三、本节踩坑清单</h2>
+  <div class="card" data-page-node-id="UCXZaMdvzPU9JCgwZQEumE">
+    <table class="pit" data-page-node-id="T3w4X59qA8BavueIsuw7ta">
+      <tr data-page-node-id="y5QWplShp4gDSZP0QeYGLb"><th data-page-node-id="FYVpkst0ANtfQeRSgWxKDl">#</th><th data-page-node-id="pUyYs3iQmsOEc16KGem060">坑</th><th data-page-node-id="Oq5hr1sR1KYztGE2Ub4O0P">表现</th><th data-page-node-id="iZSL6D0YQEDDcIQmaR5vRW">根治</th></tr>
+      <tr data-page-node-id="B5i94aiJt9QRkkwdInfRA5"><td data-page-node-id="MXCgZodjpRdOuFLdRSoYF8">1</td><td data-page-node-id="Vm8Qaf6EqXBO2ahj1czAmc"><code data-page-node-id="n09MdYSq2utQUCdFLFeGrT">&amp;&amp;</code> 当逻辑与</td><td data-page-node-id="FvvP6u0sA4DYndBu1ifIgo">SyntaxError</td><td data-page-node-id="qyifCVgv3huMOG4gzSxtww">Python 用 <code data-page-node-id="2WvOhHFCsMBhmNyxEkvARm">and</code></td></tr>
+      <tr data-page-node-id="JgQNMDmWAAVy4X6EOYblHG"><td data-page-node-id="23fquJPUIn7MiZydRFGcCB">2</td><td data-page-node-id="ZbdQDKXy1wWKCzHQJ8NGmo"><code data-page-node-id="jqu6prfvMjOozCLz12q46B">json.loads</code> 用在纯文本</td><td data-page-node-id="WwwWzEoFsBfXAZdvGRQhzy">JSONDecodeError</td><td data-page-node-id="GD2CR1EKafPNxHLLqtgX00">prompt 没要求 JSON 就不解析</td></tr>
+      <tr data-page-node-id="eSSAA6wUHdNfQy1NKLouGB"><td data-page-node-id="Seuso5Pf9LAb0qEy8j2Ziy">3</td><td data-page-node-id="IGpzUVlOxpeOtBKZcjDDEv">变量名 <code data-page-node-id="CLiN74XXPRMHu3fyfTqi24">re</code> 遮蔽 re 模块</td><td data-page-node-id="woBY4vfK6RGd0IsPorFEub"><code data-page-node-id="5TCxwCurMYRHl5BhKboUBE">re.search</code> 报错</td><td data-page-node-id="j0Pm5RsoASrUdU5LM8vr0Y">别用模块/内置名当变量（re/list/dict/str/round/id）</td></tr>
+      <tr data-page-node-id="KwbxxkCdcDEy3qBxoFYftc"><td data-page-node-id="NznB9whMpnX3qjfUBU3Ywe">4</td><td data-page-node-id="YqVCgVO63Lj7HVpozW8PCF"><code data-page-node-id="CMouStGSQ0J2uSsgpiGkie">"mastry"</code> 拼写</td><td data-page-node-id="TBCmPunRCoFupXVfQHigcB">KeyError</td><td data-page-node-id="elXyxDvq1zrinXRVeNWiyP">字段名照抄类定义</td></tr>
+      <tr data-page-node-id="GWvhkeicNN7pV3V7wgvT6V"><td data-page-node-id="yV3hD2DrGREfe3okMn9yvC">5</td><td data-page-node-id="4zpZ2ETlKXqNAuLBaXV6Qn"><code data-page-node-id="4R53hjiqJ8hfJWyAeDDjUG">.format()</code> 少传占位符</td><td data-page-node-id="1SDB6ApUPDsYqr1DAN2Acb">KeyError</td><td data-page-node-id="BOPCWA3IIOVEyTUchoypUC">模板几个 <code data-page-node-id="xejAUgiPPe5vGaamzm1iFx">{}</code> 就传几个</td></tr>
+      <tr data-page-node-id="hXV686l7xa7Rz3gNgpkymf"><td data-page-node-id="UCBVJkQdRRKmsZTXobLti3">6</td><td data-page-node-id="jivPJhKsiDaIk7bcBQTDEE">HumanMessage 粘 docstring 原文</td><td data-page-node-id="IMr43BFE3eEt1pMIXufZoX">模型收到鬼话</td><td data-page-node-id="yLSRrGonRNsCOKEBTnncDX">写正常指令</td></tr>
+      <tr data-page-node-id="AdfOd3G2VOI10KF0Q5JH9f"><td data-page-node-id="CqMcItL4EklJ4VpsvRnTqv">7</td><td data-page-node-id="SRIytxuRnA7tDxsgIR7JvA"><code data-page-node-id="CKU1jiqq1DD6SHBTyqsyKU">resp.content["key"]</code></td><td data-page-node-id="LQ3F3wYrqbCDD3F99hTA8G">TypeError: string indices</td><td data-page-node-id="UAt4bCMwXGCX4TcveVr53e">content 是 str，下标只能整数</td></tr>
+      <tr data-page-node-id="vWNdH3QfYH42gB6OGmGf76"><td data-page-node-id="C7iNfXWUPKObTFOPl6SfOL">8</td><td data-page-node-id="xCjEl8Bm0rZ9iivUCW0D7E"><code data-page-node-id="qGM0JNul8rZWRmlzrrec4r">.replace()</code> 不传参</td><td data-page-node-id="PlLj8AxRYRO5CFgYbLn3LT">TypeError</td><td data-page-node-id="XRm5UCdhEOvEWCPrdOZrMo"><code data-page-node-id="br2Ed0H1dZ5qPEEmKV9O1z">replace(旧, 新)</code> 两参</td></tr>
+      <tr data-page-node-id="2Y4krBbRZG78nqZW3FsHCE"><td data-page-node-id="X8rY6StzuF4wiCeSwGbk7H">9</td><td data-page-node-id="4C7hnZbdIqCc2d9oRkpSuG">漏注册 <code data-page-node-id="UI2sTcHpUdtvpBGZ6X0j4D">add_node("quiz")</code></td><td data-page-node-id="WRBAmPazeSGKWLsFodwZVQ">compile 报 unknown node</td><td data-page-node-id="DWctsLxio2YsaGEuW9ksWT">4 节点注册齐，注册≠连边</td></tr>
+      <tr data-page-node-id="Hy8Y8TfotReR0lZLcREr7z"><td data-page-node-id="ZEamXC0bDBxBNZUNwGBYwK">10</td><td data-page-node-id="Sz5RFHVxSsylrjNUXejeMF">缺 <code data-page-node-id="28Mpn4gni83pnfe2BMjipc">round&gt;=5</code> 第一条</td><td data-page-node-id="LMPTamdkJ0eE7O3htyGp8f">场景 A 死循环烧钱</td><td data-page-node-id="apOL3kWLOexOyLnnMWoGD8">顺序：硬上限→plan→retry→end</td></tr>
+      <tr data-page-node-id="CWbxCHCbFoW0C44nNIOZvh"><td data-page-node-id="enmiHL0S9R72VXQAzFzf3g">11</td><td data-page-node-id="Ec5P2HJ0dD97wH7RRtMSqJ"><code data-page-node-id="C1uO6uhb0RPlRiC2WUcrxJ">round+1</code> 放 tutor</td><td data-page-node-id="gB7eAAwRkpeGvtDSWzKmxv">round 冻结死循环</td><td data-page-node-id="E5IcECaPXFHhfmHIq75rsz">放必经节点 eval（铁律二）</td></tr>
+      <tr data-page-node-id="bcwJciTlfZfPmX6TCRE9sr"><td data-page-node-id="uQZ4AJaHwQBVTPYPM8ykxO">12</td><td data-page-node-id="QLuMrn0t0ZP17nv49LBzkY">信 prompt"0~1"不钳制</td><td data-page-node-id="nOzEtYy0F7hEuXwAlcjDHL">85/3/-0.2 污染判断</td><td data-page-node-id="5gYnJLIhaUGmaAdQnqfBYS"><code data-page-node-id="OsARudj4lbSOeDfYKOgHhd">max/min</code> 兜底</td></tr>
+      <tr data-page-node-id="sG5iIj0L6uIcFEjridr1PQ"><td data-page-node-id="no5ZNoC1N3e5GrEPRwQAb3">13</td><td data-page-node-id="DznZLTkNov9JmsJY3sv5V0">变量名 <code data-page-node-id="izgvg0k4yGCdJDfG6OwDQ5">round</code> 遮蔽内置</td><td data-page-node-id="27q8UpUMpGlJBvPEDvYwSs">内置 <code data-page-node-id="tNeu6XiSU7g9PmxooHE6qP">round()</code> 炸</td><td data-page-node-id="2Mtuax4wsLGql8cXRELgFh">改名或内联</td></tr>
+    </table>
+  </div>
+
+  <h2 data-page-node-id="8E0a3l0vIttfrqbNDdKebK">四、论文定位（第 5 章动态任务规划的前置）</h2>
+  <div class="card" data-page-node-id="tRaar1qni3HFYra441SHps">
+    <ul data-page-node-id="1GsytXfwkdrVgNQRTEbE4A">
+      <li data-page-node-id="UWPzbuCAGwABHR63UB8Pwf"><strong data-page-node-id="GTpz8j0BjeiV8O5UPW3sj8">流水线拆分</strong>：把"教学"拆成导师/出题/评估/规划四个工位——第 5 章让规划 Agent 从"输出一个知识点名"升级为"输出完整学习路径策略"。</li>
+      <li data-page-node-id="PKb1AISirpCENzsarAAsdU"><strong data-page-node-id="zSFWznxe64S91PQDNUraWI">接力棒 State</strong>：多 Agent 传结构化字段而非聊天流水账——多 Agent 系统设计第一原则，可写进论文方法部分。</li>
+      <li data-page-node-id="VTKfDzlSYdCux5rKTfYhcT"><strong data-page-node-id="TbyGhXmuCWv6I7LxSdHb4t">终止性证明</strong>：枚举两条回边 + 各自出口，答辩被问"会不会死循环"直接背这段。</li>
+      <li data-page-node-id="WI7Bat23bDzWj6ioXxcV5g"><strong data-page-node-id="CoiEk2pkWgiVQF1vSGAelz">双计数器</strong>：round（防死循环）+ retry_count（当前知识点重试）的取舍，第 5 章可展开。</li>
+      <li data-page-node-id="UMFVXu0CBwBks8zaD83WQR"><strong data-page-node-id="ectJRMUoUuhCaNAK9PrcDN">规划决策结构化</strong>：plan 输出"无"不结束的缺口 = 第 5 章要解决的第一个真问题。</li>
+    </ul>
+  </div>
+
+  <h2 data-page-node-id="eGLrUKjBegXFPpqzu6NgdD">五、代码段（关键骨架）</h2>
+  <div class="card" data-page-node-id="1pDFd56l6xqc6DFieW5Cgt">
+    <pre data-page-node-id="QxJJEHSEWDgsvM49xAdw9h">def tutor_node(state):
+    resp = llm.invoke([SystemMessage(content=TUTOR_PROMPT.format(topic=state["topic"])),
+                       HumanMessage(content="请开始讲解")])
+    return {"lecture": resp.content}          # 纯文本,不解析
+
+def quiz_node(state):
+    if state.get("question"):
+        return {}                             # 外部已指定题目 → 沿用
+    resp = llm.invoke([SystemMessage(content=QUIZ_PROMPT.format(topic=state["topic"])),
+                       HumanMessage(content="根据知识点出题")])
+    return {"question": resp.content}
+
+def eval_node(state):
+    resp = llm.invoke([SystemMessage(content=EVAL_PROMPT.format(
+        topic=state["topic"], question=state.get("question",""),
+        answer=state.get("student_answer",""))), HumanMessage(content="请批改这份答案")])
+    text = resp.content.strip().replace("```json","").replace("```","")
+    try:
+        data = json.loads(text)
+        mastery = float(data["mastery"]); feedback = data.get("feedback","")
+    except Exception:
+        m = re.search(r"\d\.?\d*", text)
+        mastery = float(m.group()) if m else 0.0
+        feedback = text[:50]
+    mastery = max(0.0, min(mastery, 1.0))
+    return {"feedback": feedback, "mastery": mastery,
+            "round": state.get("round", 0) + 1}   # 计数放必经节点
+
+def plan_node(state):
+    resp = llm.invoke([SystemMessage(content=PLAN_PROMPT.format(
+        topic=state["topic"], mastery=state.get("mastery", 0.0))),
+        HumanMessage(content="请决定下一个知识点")])
+    nxt = resp.content.strip()
+    return {"next_topic": nxt, "topic": nxt}   # topic 也要换!否则出题还考旧的
+
+def should_continue(state):
+    r = state.get("round", 0); m = state.get("mastery", 0.0)
+    if r >= 5:  return "end"      # ① 硬上限兜底(plan 回边那条路)
+    if m >= 0.7: return "plan"    # ② 学会了
+    if r < 3:   return "retry"    # ③ 没学会,再试
+    return "end"                  # ④ 3 轮还不会,收工</pre>
+    <p class="muted" data-page-node-id="PxKBEI4pRzJtuA3D9u3BmT">完整代码在 <code data-page-node-id="PfLMr23RvjqnjtZACatjMN">agent_project/multi_agent.py</code>（含三场景演示 + 全部 prompt）。</p>
+  </div>
+
+  <div class="footer" data-page-node-id="Vz9EI1RmJu2Vh8gOYJk59i">阶段二 · 2.6 多 Agent 协作 ｜ 2026-09-04 ｜ 下一节:2.7 动态任务规划(Plan-and-Execute)</div>
+</div>
+</body>
+</html>
