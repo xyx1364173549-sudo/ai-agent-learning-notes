@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="pmC3ok6IJ4NMhSDnd1R6kQ">
+<head data-page-node-id="lnzR6zoa5scZosTGN5bCin">
+<meta charset="UTF-8" data-page-node-id="q17fwW3FXCIecN5uFxQMWw">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" data-page-node-id="yayilpeJBTRBlXaMCAdNrl">
+<title>3.1 MCP 协议 · 学习笔记（详细版）</title>
+<style>
+:root{
+  --bg:#0d1117; --panel:#161b22; --panel2:#1c2230; --line:#2d333b;
+  --text:#e6edf3; --muted:#8b949e;
+  --blue:#58a6ff; --green:#3fb950; --orange:#d29922; --red:#f85149;
+  --purple:#bc8cff; --cyan:#39c5cf;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--text);
+  font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;
+  line-height:1.75; padding:32px 20px 80px;
+}
+.wrap{max-width:960px;margin:0 auto}
+header{border-bottom:2px solid var(--line); padding-bottom:20px; margin-bottom:28px;}
+.tag{
+  display:inline-block; background:rgba(88,166,255,.12); color:var(--blue);
+  border:1px solid rgba(88,166,255,.3); border-radius:20px;
+  padding:3px 14px; font-size:12px; letter-spacing:1px; margin-bottom:12px;
+}
+h1{font-size:27px; margin-bottom:10px}
+.sub{color:var(--muted); font-size:14px}
+h2{
+  font-size:20px; margin:38px 0 16px; padding-left:12px;
+  border-left:4px solid var(--blue);
+}
+h3{font-size:16px; margin:22px 0 10px; color:var(--cyan)}
+p{margin-bottom:12px}
+.muted{color:var(--muted); font-size:13px}
+.key{color:var(--orange); font-weight:600}
+.key-g{color:var(--green); font-weight:600}
+.key-r{color:var(--red); font-weight:600}
+.key-b{color:var(--blue); font-weight:600}
+.quote{
+  background:linear-gradient(90deg,rgba(88,166,255,.10),transparent);
+  border-left:4px solid var(--blue); border-radius:0 8px 8px 0;
+  padding:16px 20px; margin:18px 0; font-size:15px;
+}
+.quote.warn{border-left-color:var(--red); background:linear-gradient(90deg,rgba(248,81,73,.08),transparent)}
+.card{
+  background:var(--panel); border:1px solid var(--line);
+  border-radius:10px; padding:20px; margin:16px 0;
+}
+.card.warn{border-color:rgba(248,81,73,.4); background:rgba(248,81,73,.05)}
+.card.ok{border-color:rgba(63,185,80,.4); background:rgba(63,185,80,.05)}
+.card.tip{border-color:rgba(210,153,34,.4); background:rgba(210,153,34,.05)}
+table{width:100%; border-collapse:collapse; margin:14px 0; font-size:13.5px}
+th,td{border:1px solid var(--line); padding:8px 10px; text-align:left}
+th{background:var(--panel2); color:var(--blue); font-weight:600}
+td{background:var(--panel)}
+tr:nth-child(even) td{background:var(--panel2)}
+pre{
+  background:#010409; border:1px solid var(--line); border-radius:8px;
+  padding:16px; overflow-x:auto; margin:14px 0;
+  font-family:Consolas,"Courier New",monospace; font-size:12.5px; line-height:1.6;
+}
+code{
+  background:rgba(110,118,129,.25); border-radius:4px;
+  padding:2px 6px; font-size:12.5px; font-family:Consolas,monospace;
+}
+pre code{background:none; padding:0}
+.flow{display:flex; gap:10px; flex-wrap:wrap; margin:16px 0}
+.flow .step{
+  flex:1; min-width:160px; background:var(--panel); border:1px solid var(--line);
+  border-radius:10px; padding:12px 14px;
+}
+.flow .step .n{
+  display:inline-block; width:24px; height:24px; line-height:24px; text-align:center;
+  background:rgba(88,166,255,.15); color:var(--blue); border-radius:50%;
+  font-size:13px; font-weight:600; margin-bottom:8px;
+}
+.flow .step .t{font-size:13.5px; font-weight:600; color:var(--text); margin-bottom:4px}
+.flow .step .d{font-size:12px; color:var(--muted)}
+ul,ol{padding-left:24px; margin:10px 0}
+li{margin:5px 0}
+.pit td:first-child{font-weight:600; color:var(--red)}
+.footer{
+  margin-top:40px; padding-top:16px; border-top:1px solid var(--line);
+  color:var(--muted); font-size:13px; text-align:center;
+}
+</style>
+</head>
+<body data-page-node-id="8gkFPLhmA0DRqEdNCnHxyn">
+<div class="wrap" data-page-node-id="KY8mWncf7wT7J2FFi0HE68">
+  <header data-page-node-id="EEOAjmD4brnbwZoIiiQgqD">
+    <span class="tag" data-page-node-id="7idDHaa1N89bLMJb5blBHK">阶段三 · MCP 协议 · 详细版</span>
+    <h1 data-page-node-id="ZXQ0LhYKvOOF4kvcwlLLkE">3.1 MCP 协议（能写一个简单 MCP Server）</h1>
+    <div class="sub" data-page-node-id="Bawooq8SoN47AcSMVGiG8s">把 2.5b 情景记忆包成标准工具 → 任何 MCP 客户端即插即用 → Agent 工程的"标准插座"</div>
+  </header>
+
+  <div class="quote" data-page-node-id="9omAe9DiXAVaVVJz4qJnFf">
+    <strong data-page-node-id="QuoOaOq3xokcAIQVOR30Ha">MCP（Model Context Protocol）</strong> = 给 Agent 的"工具 + 数据"定的<span class="key-b" data-page-node-id="klfMBSYVBV4BT67tX9sCrB">一套通用接口协议</span>。我们用 <code data-page-node-id="vAx3D3yNkLOrZKSMy8V4Qs">MCPServer</code> 把 2.5b 的 <code data-page-node-id="wizNrO1p8hNq6PYkzxuFML">save_episode / search_episodes</code> 包成两个标准工具，函数一旦被 <span class="key" data-page-node-id="u2aOWsVJt7Sjv9Xg0LOZEF">@server.tool()</span> 装饰，就自带"说明书"暴露到协议层——客户端先"看菜单"（list_tools）再"点单"（call_tool），<span class="key-b" data-page-node-id="KzjLxCfwGDHtqbaNZwzuU6">不写一行对接代码</span>。
+  </div>
+
+  <h2 data-page-node-id="SlB9e2oO1JyXdEot48UwiX">一、痛点：你的函数很好，但"别人"没法用</h2>
+  <div class="card warn" data-page-node-id="PU350nznJRauDf0t3xHcQT">
+    <table data-page-node-id="GfFoYn4iUCFMz0ldJW87Uk">
+      <tr data-page-node-id="sDQlpBgLzfgCRWJjjj1USr"><th data-page-node-id="WbdDorud3Jol5oCG8yLVqs">没有 MCP 的世界</th><th data-page-node-id="G6aikdE2RTi8FJtVRoPWm7">有了 MCP 之后</th></tr>
+      <tr data-page-node-id="RIVvB0kjNRIOe5AHffX2vf"><td data-page-node-id="8RmsKCcLE63KNMiw7GhO4x">函数写在项目里，只有自己能 import</td><td data-page-node-id="jAYP5OZjeykOpmCW5jexPX">函数变成<b data-page-node-id="qNTwhKDiHtPAPoEtQbTp7L">工具</b>，任何 MCP 客户端即插即用</td></tr>
+      <tr data-page-node-id="4PChHA0AnCodP1ULCFFDSA"><td data-page-node-id="HiRBOPFzwvC5EFW6OcPB10">想给别的 AI 应用用？得自己写 HTTP 接口 + 文档 + 鉴权</td><td data-page-node-id="OsKFRlHZQZypK6OvtGrnwD">协议帮你把"接口、文档、参数校验"全标准化</td></tr>
+      <tr data-page-node-id="afOuinQqXF3hCCs5ytbbXf"><td data-page-node-id="yKpH81E7UcxNqQEOeh3AEO">每个应用一套对接方式，N 个应用 N 套代码</td><td data-page-node-id="CyCyzOvrDF0pkNdzT2cU9x"><span class="key-g" data-page-node-id="0F9zMrWfVXsTjNQnzqcTwe">一次实现，处处连接</span>（Claude / Cursor / 自研应用…）</td></tr>
+    </table>
+    <p class="muted" data-page-node-id="wmGnrtvhRQKOgn99cy1uIP"><span class="key" data-page-node-id="qfOXaecjbmp4qxQfWD9sFa">类比</span>：没有 MCP 前，每个家电自带专属充电口，你得为每台机器配一根线；MCP 之后全行业统一成 <b data-page-node-id="NgN0KTjlMcsVAYBuRzTQCo">USB-C</b>——你写的 server 只认"MCP 这个口"，任何客户端拿标准线一插就能用。<code data-page-node-id="Mk0cj5VHFzYcVuydaGG1jG">@server.tool()</code> 就是"把自家插座改装成国标"的那一步。</p>
+  </div>
+
+  <h2 data-page-node-id="WmAUnWdiAgpTvN1O3J3LCA">二、MCP 三件套：谁是谁</h2>
+  <div class="card" data-page-node-id="LuTAOEH7jwpFdpT1cUf4ym">
+<pre data-page-node-id="SOREiJniYAqHkpdjYDN0pH">┌─────────────────────────────────────────────┐
+│  Host(宿主应用:Claude Desktop / Cursor / Inspector)  │
+│  ┌──────────┐   ┌──────────┐   ┌──────────┐  │
+│  │ Client A │   │ Client B │   │ Client C │  │  ← 每个 server 配一个专属 Client
+│  └────┬─────┘   └────┬─────┘   └────┬─────┘  │
+└───────┼──────────────┼──────────────┼────────┘
+        │ JSON-RPC     │              │
+   ┌────▼─────┐   ┌────▼─────┐   ┌────▼─────┐
+   │ Server 1 │   │ Server 2 │   │ Server 3 │   ← 轻量进程,暴露工具/资源/提示
+   └──────────┘   └──────────┘   └──────────┘</pre>
+    <table data-page-node-id="Agg1565FBOUcMkVci1mioC">
+      <tr data-page-node-id="tPfFYuH0uEkRxWU6yhMPTh"><th data-page-node-id="eh1Jy4q9PlfO0RgiJYVvDN">角色</th><th data-page-node-id="vAFNVdWxmufO7DJ9VyNAat">是谁</th><th data-page-node-id="kwnpEZTAklGYFDCStycMcY">干什么</th></tr>
+      <tr data-page-node-id="9QayDMvAdw7UxPxTTTXLRe"><td data-page-node-id="ucMsi0bg7WMSeO9lrahnxf"><b data-page-node-id="fCzSOdJYMsEZU6bEXD3kLJ">Host</b></td><td data-page-node-id="1tLFadrHAtnKWUCZrE5K0A">你正在用的 AI 应用</td><td data-page-node-id="WEjj9SAW2GFtXi0vAeZiUi">负责 UI、模型、多 Client 管理</td></tr>
+      <tr data-page-node-id="hyeE95i831YjBKqInFNDC5"><td data-page-node-id="AqGGXCijnZTrhfia0pbVBW"><b data-page-node-id="rD5d34kzmCF485LoNug2JA">Client</b></td><td data-page-node-id="K6DxzTS0SWKAfoTHZNtFDi">与某个 Server <b data-page-node-id="OOscHqjewXO57HFkqEeRQJ">一对一</b>的连接</td><td data-page-node-id="K0sxrIABFNzfRZ6bwL1Dub">发请求、收响应（协议对话）</td></tr>
+      <tr data-page-node-id="iJbbFKDTlSPego4HqjCEn6"><td data-page-node-id="TNGk590ZAQeofiGRc26LER"><b data-page-node-id="p4tIt7jMgIKXRr0Dk4SbXa">Server</b></td><td data-page-node-id="puWTxh7rBg1SlsY0vFPG9H">我们的 mcp_server.py（一个进程）</td><td data-page-node-id="ZixSfxD8qw9ThKLwgGJ9OR"><b data-page-node-id="3FAv4RkIR2HHlFCZ0upJo9">暴露能力</b>：Tools / Resources / Prompts</td></tr>
+    </table>
+    <p class="muted" data-page-node-id="YuSBHmIfjVGGjnpK677MG6"><span class="key-b" data-page-node-id="2KxVCr7YGR7dze6n9E3Eij">关键关系</span>：一个 Host 可挂多个 Server；但<b data-page-node-id="sU8EDaiWpCzYEwS5bIECWN">一个 Client 只服务一个 Server</b>（一对一）。</p>
+  </div>
+
+  <h2 data-page-node-id="pARg1efZSqM07CQgyH8V8o">三、传输通道：stdio（本阶段主角）</h2>
+  <div class="card" data-page-node-id="Hyu2XqQIIVqT8UnNmD16us">
+    <ul data-page-node-id="7eotXP0cNt6YrVtKBlMyra">
+      <li data-page-node-id="FJrrlA0g1ZjNYFYaNP3ELh">客户端 spawn 一个 python 进程跑你的 server</li>
+      <li data-page-node-id="4EGyWGEHuSUVvxWAxiWtJj">双方通过<b data-page-node-id="sw9lA7YFEoFrH5yMROtqHP">标准输入 / 标准输出</b>互发 JSON-RPC 消息</li>
+      <li data-page-node-id="QEXmclCq3XNDGhFHXCQADz"><code data-page-node-id="cNUezDvBXXQGoEdHR0ZtzF">server.run()</code> = 启动"读 stdin → 干活 → 写 stdout"的循环</li>
+    </ul>
+    <p class="muted" data-page-node-id="yqxC2U0HoDFnQNoGJzELmD">测试客户端传 <code data-page-node-id="1Vf3IuOx417WHa035c6o6H">command=python.exe, args=[mcp_server.py]</code>，就是告诉系统"用哪个解释器跑哪个文件"。</p>
+  </div>
+
+  <h2 data-page-node-id="08UOYQfdEAIQEKnjlAoWfP">四、⚠️ 时效大坑：mcp 2.x 改名风暴（本节最大的记忆点）</h2>
+  <div class="card warn" data-page-node-id="byebgUPA2dQbYdq0vmJdEH">
+    <p data-page-node-id="GJiDyHECHQfhYe8xtBMLzn">你装的是 <b data-page-node-id="YhWJTsBjK0jsCePdqZ3ZVJ">mcp 2.1.1</b>，网上绝大多数教程停留在 1.x，<span class="key-r" data-page-node-id="j80fjeeU01L0pv1vfrl0gG">API 已换代</span>：</p>
+    <table data-page-node-id="8B7yio6doFgsggmnSZWDO2">
+      <tr data-page-node-id="zTBLhAyYQGWZ3Aae004HX7"><th data-page-node-id="sAUejVsFTqWdj33262WDNY">事情</th><th data-page-node-id="pNt8rDkHHKbbmsXJLgHWUu">1.x 老教程写法</th><th data-page-node-id="m65cEHACDIFykGaydKJid8">2.x 真实写法（本项目）</th></tr>
+      <tr data-page-node-id="3riDwzBU2jpchPSPCOhOgG"><td data-page-node-id="TnsupbmvI2YnWFzCMxyHd7">导入容器</td><td data-page-node-id="B65GS3JdYt0PVg5iRLjdoj"><code data-page-node-id="53bDBCfxxEsV3UpO0GUR13">from mcp.server.fastmcp import FastMCP</code></td><td data-page-node-id="htP7vUryNUwh4eGD4jjz4f"><code data-page-node-id="sZBDbhzlxLekxuUwasFNIM">from mcp.server.mcpserver import MCPServer</code></td></tr>
+      <tr data-page-node-id="AaNRAJtJ6NodJg7qsuIU59"><td data-page-node-id="u7fHmJCNrRNoCjQwBRKgHp">创建实例</td><td data-page-node-id="ZQ1e0TNDEqrbZAc7WRwbP3"><code data-page-node-id="wNgr8NxQvJzGJn8cEJekem">FastMCP("名")</code></td><td data-page-node-id="7RGUqGlYHB7V3cAhdV2UjX"><code data-page-node-id="A2gT4MvsDqLuhAxSZXfEdB">MCPServer("名")</code></td></tr>
+      <tr data-page-node-id="YsmgQFhYqsKk86JEnog36i"><td data-page-node-id="T1NALXBvSYCxgvZoHwChmB">注册工具</td><td data-page-node-id="IuEtuOnDzLySfciPcB5nsX"><code data-page-node-id="UhxjUVmtIAPECreVKbq6M6">@server.tool()</code></td><td data-page-node-id="dNICPVBmCNHq46E1LZZc4Z"><code data-page-node-id="uqpHwo6MTrFkQ9xKq81Kpg">@server.tool()</code>（<span class="key-g" data-page-node-id="aXjDOYfmytaCSx8nCk5odz">没变</span>）</td></tr>
+      <tr data-page-node-id="ZgE1DJ0JVApAQdXnKFpbcx"><td data-page-node-id="3p4GQibHexOD8ohwQxdu2K">启动</td><td data-page-node-id="prPzlYuM66S9KnreWNtQNQ"><code data-page-node-id="qkSXXRZsCbV3Vz5R4dgPFw">server.run()</code></td><td data-page-node-id="5gAgMAFqDz5BGte1TC2XA8"><code data-page-node-id="fhfLppVI0uYU2vvK1Cxl46">server.run()</code>（<span class="key-g" data-page-node-id="U8QXxXWLBlONL9E5xoipFS">没变</span>）</td></tr>
+      <tr data-page-node-id="Q7qanJlq4PE8p6TGqbB0Wr"><td data-page-node-id="91Cumv96i2vy0LkmmpTETX">客户端</td><td data-page-node-id="rbRavG3BTS1W8CeAppuJiv">stdio_client + Client 两段式</td><td data-page-node-id="Kmq1JJqxKeAUO9CHtMUF2d"><code data-page-node-id="cZEoKTuqSXHtwSt7oHM5qa">Client(server_params)</code> <b data-page-node-id="TXce3vIDfCeeYo7PUFtmNp">一站式</b></td></tr>
+      <tr data-page-node-id="PhfJfloMtENf1rP5diznFc"><td data-page-node-id="JuKEYbulCO1B8f6T9UyaY5">列工具</td><td data-page-node-id="MF4vHU6eSM2DbaorD2x6NP">result.tools</td><td data-page-node-id="LysWQTlyAbPJVzRrDv0YFh">仍是 .tools，但 result 类型变了</td></tr>
+    </table>
+    <div class="quote warn" style="margin-bottom:0" data-page-node-id="7kyb6sa22n93vASDJScyIW">
+      <strong data-page-node-id="C1iGaQhPfR3i4bz65d1Ep1">教训</strong>：装完包先确认版本（pip show mcp），教程看不懂先怀疑"版本不对"，别硬套 1.x 代码。
+    </div>
+  </div>
+
+  <h2 data-page-node-id="zg9GTP7Kuu4177Uh8SGqm9">五、@server.tool() 把你的函数怎么了？（核心顿悟）</h2>
+  <div class="card" data-page-node-id="1DP3DjQlGkZc7iqjHQgiOe">
+<pre data-page-node-id="2vnFv5M90rpzF3xHBPPHsF">@server.tool()          # ① 装饰器:登记为"工具"
+def add_episode(topic: str, summary: str, score: float, difficulty: str = "中") -> str:
+    """记录一次学习会话。
+    参数:topic 知识点, summary 会话摘要, score 练习得分(0~1), difficulty 难度。
+    返回:写入成功提示,含新记录的 id。"""
+    ...  # 函数体还是那个函数体,2.5b 的 save_episode 照用</pre>
+    <p data-page-node-id="qACF459N69LTbKYiBFUKvS">装饰的那一刻发生三件事：</p>
+    <table data-page-node-id="z0hZmFsrTJzUKUg30Ekd0A">
+      <tr data-page-node-id="1UrVApLBvYhbdMQEkExW3G"><th data-page-node-id="Wxt7nWkA4Vp6Fz7HXeWZhB">装饰前</th><th data-page-node-id="Adg939Mz5q7OBmltYpFRiq">装饰后</th></tr>
+      <tr data-page-node-id="M5wlvA3wP21imlR1TQ8bFG"><td data-page-node-id="TG43urQH9wIcU5YfWGHiiI">函数签名 <code data-page-node-id="GmdhU0ggGg8fRO9yPP1hZK">topic: str</code></td><td data-page-node-id="iNKQ1WWk669w8cAWUTdqYY">→ 工具"必填参数 topic，类型字符串"</td></tr>
+      <tr data-page-node-id="EtHhfb9DgAJmEPEFP0p9PC"><td data-page-node-id="op767eHWSaf6lqly5jEHav"><code data-page-node-id="bZCuH3jS1YlDPVd14lFEM3">difficulty: str = "中"</code></td><td data-page-node-id="9lIdB07vrI3WRDetqqaApA">→ "选填参数，默认'中'"</td></tr>
+      <tr data-page-node-id="5FqsJnZdvA07LiumfiXFRz"><td data-page-node-id="fiLoFeCeWXv2hMvGWhlpLZ">docstring 写给自己看</td><td data-page-node-id="yfTUA89l6c9hqYuqfLQRK9">→ 变成<b data-page-node-id="IYRyEzBXkcg0orjd2c2yll">工具说明书</b>（客户端/模型靠它决定怎么用）</td></tr>
+      <tr data-page-node-id="44dlExyZCWDbQKhGkoO2zs"><td data-page-node-id="WvjSUtjfajDhplHwbY7lk5">函数只在模块里</td><td data-page-node-id="kqBUojQAHrmUJafSYcSSj4">→ 登记进工具清单，list_tools() 能列到</td></tr>
+    </table>
+    <div class="quote" style="margin-bottom:0" data-page-node-id="jJ6YZygXBnYt0wDEV7ZAzo">
+      <strong data-page-node-id="NH1z7DS9GIOkEhuz1XqmnO">一句话钉死：你写的是普通 Python 函数，@server.tool() 帮它办了"营业执照 + 菜单"——从此别人不 import 也能按菜单调用。</strong>
+    </div>
+  </div>
+
+  <h2 data-page-node-id="BABLsc13IsOitLdZEpBmQ0">六、DB_PATH 为什么要钉死（工程思维）</h2>
+  <div class="card" data-page-node-id="C1AcIQLh4ZzM6lBz8DV7Rx">
+<pre data-page-node-id="JVZR3mAG8TkrWUiMQGCcJ2">DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "memory.db")</pre>
+    <p data-page-node-id="3vbLt4D7K437aeXlavANLB">你的 server 是<b data-page-node-id="DhhxGEUk8E2vxayUQCdzPd">被客户端 spawn 的子进程</b>，它的"当前工作目录" ≠ agent_project。若用相对路径 <code data-page-node-id="GAF3yxVeTMiPT2gyGjOGts">DB_PATH = "memory.db"</code>，它会在<b data-page-node-id="Vi6VQNbOFTLmQtZmDO3GGD">错误的地方</b>建库/找库——这是"Inspector 里 add 成功、query 却查不到"的头号嫌疑。<code data-page-node-id="qpMO2zbTqI1Z6dZHcFXsuG">__file__</code> = "本文件在哪"，钉死到脚本所在目录，<span class="key-g" data-page-node-id="Ruj5ERbK8preu8Kz2rx1tM">无论谁在哪儿启动都找对库</span>。</p>
+  </div>
+
+  <h2 data-page-node-id="d3okx6x8SjUWrwvmzILTb2">七、调试台：MCP Inspector（你亲眼看到的那个网页）</h2>
+  <div class="card ok" data-page-node-id="vwyooYwNtGXOJCtR0HO0bY">
+    <p data-page-node-id="S9LfNTOFh6QCK2XlEiAf5c"><code data-page-node-id="EbrJQhgWCVJBVjCxjfEiXW">mcp dev mcp_server.py</code> 一键拉起三样东西（<b data-page-node-id="joVyLX9Bl2iemGNYLp5KeV">依赖 uv</b>，没装会红点 Failed）：</p>
+    <table data-page-node-id="nYybto1BpSGcD0nB0ZTpsL">
+      <tr data-page-node-id="oOsZYPLr4sxg7GaujPwTCx"><th data-page-node-id="Weejk3TSQVQgDK9k4IzoEp">组件</th><th data-page-node-id="beF4VCXBxEjUwzPkwheu4J">干什么</th></tr>
+      <tr data-page-node-id="dyFgBDYW9hzXhKPPB0ACJk"><td data-page-node-id="erqXNQQrTHWOq6B40ZgfeJ">你的 server 子进程</td><td data-page-node-id="Tcgo8q0BQoWiRzAW8GtIwp">被拉起、等调用</td></tr>
+      <tr data-page-node-id="I0N0H9nbylCZD9hCHojOpj"><td data-page-node-id="mAeEf8MuSoHg5Nnsnb7mnv">代理服务器（端口 6274）</td><td data-page-node-id="7jOCLnLdHXvEQB1oLtpmUl">中转消息</td></tr>
+      <tr data-page-node-id="ysHfzO2d7rW8m8qyh7HiGm"><td data-page-node-id="5E7mcIRYR8lNueoClxUNxP">Web UI（http://localhost:5173）</td><td data-page-node-id="2QxZpwxbdOJxss9WUFDBE8">可视化调试台（Inspector）</td></tr>
+    </table>
+    <table data-page-node-id="FSXP4T3VbmpjAHKnsFKrDN">
+      <tr data-page-node-id="zEcVsr6rSnDIShhv9aCWQ5"><th data-page-node-id="c4e20DtSF7ObSPOwkEgseF">Inspector 面板</th><th data-page-node-id="tkpln4HRorxOH9A3BANBze">作用</th></tr>
+      <tr data-page-node-id="peXnfSTDyQ3h4Jmc2Aowtw"><td data-page-node-id="uYGDC4Chv8jDnQhTCSF6K7">左侧 Tools 列表</td><td data-page-node-id="Ynb7eiZswaB4zB9arrgyMD">你的工具清单（query_memory / add_episode）≈ 自动调了 list_tools()</td></tr>
+      <tr data-page-node-id="c3T4ThWZwAHzbwRKyRstHS"><td data-page-node-id="3ctliHS8tRka8ynbwdDgge">中间参数区</td><td data-page-node-id="m2n38MmYTOQYbGSu2bbVsh">填参数 → 点测试 ≈ 自动调了 call_tool()</td></tr>
+      <tr data-page-node-id="VBqYzlbzuSpvCZiuZlXVdA"><td data-page-node-id="mL2XJkPi7F7aD4CjQG2rLE">下方 Results</td><td data-page-node-id="bWHSDBmsXdf6eGdCi1Kj7J">返回的字符串</td></tr>
+      <tr data-page-node-id="HFECUHdK3GqI1lRgfchutS"><td data-page-node-id="ROXBEuKoYr3EJPRvAkJ0Ht">右侧 <b data-page-node-id="5AaySrm3xzpO8XkrjNTODz">Messages</b></td><td data-page-node-id="87la09UZIVgTVJOKD1l94F">协议黑匣子：实时打印 CLIENT → SERVER 原始 JSON-RPC 报文（TOOLS/LIST、TOOLS/CALL…）</td></tr>
+    </table>
+  </div>
+
+  <h2 data-page-node-id="cXLubjvPb0SevEKxWBp4r9">八、用代码当客户端（test_mcp_client.py 三段式）</h2>
+  <div class="card" data-page-node-id="iI075N7axik7A90Lz82slS">
+<pre data-page-node-id="vo5LDVftEZfW5p83WK5M95">from mcp import Client, StdioServerParameters
+
+server_params = StdioServerParameters(command=python, args=[mcp_server.py], cwd=项目目录)
+
+async with Client(server_params) as client:   # 2.x 一站式:spawn 进程 + 接管 stdio + JSON-RPC
+    result = await client.list_tools()        # ① 看菜单
+    for t in result.tools:                    #    2.x:result 是对象,要 .tools
+        print(t.name)
+
+    result = await client.call_tool("add_episode", {...})   # ② 点单
+    print(result.is_error)                                 #    出错标志
+    print([c.text for c in result.content])                #    真实内容在 .content[].text
+
+    result = await client.call_tool("query_memory", {})    # ③ 读回验证</pre>
+    <p class="muted" data-page-node-id="upw1En2sSTMDk8KtSzbAPx"><span class="key-r" data-page-node-id="KP5OdQ6z4P3lRxrsZ0gIb1">2.x 返回值套路（记死）</span>：list_tools() → <code data-page-node-id="F0io9pUM50kdt0VEkbYHR6">.tools</code>；call_tool() → <code data-page-node-id="Tj7aJ8EThmZMoGsokxXxpW">.content</code>（列表，元素取 <code data-page-node-id="SN0NYtrrS1KoBx1R5wJwaq">.text</code>）+ <code data-page-node-id="O8dhjBYutta4BgxsklSP8M">.is_error</code>。忘了这步会拿到"看不懂的 Pydantic 对象"。</p>
+  </div>
+
+  <h2 data-page-node-id="HqomK9DSY6uW4dcBBUvvlC">九、测试验收</h2>
+  <div class="card ok" data-page-node-id="49G8oNG0lAlFu9pYCWp25h">
+    <h3 style="margin-top:0" data-page-node-id="THwz63JG7zMX5nShqs1tQp">验收 1：Inspector 网页可见工具（✅ 截图确认）</h3>
+    <p class="muted" data-page-node-id="tCdkfsXvHhEIDNUh8O3jwB">mcp dev 自动开浏览器 → 左侧看到两个工具 + Messages 打印 TOOLS/LIST、NOTIFICATIONS/INITIALIZED → server 与调试台握手成功。</p>
+    <h3 data-page-node-id="vaYpEdcDJIBtOFNXyj3BSi">验收 2：query_memory 空库分支（✅ 截图确认）</h3>
+<pre data-page-node-id="WXgq7OGZslOzqJLOqnIM4c">该学生暂无学习记录</pre>
+    <p class="muted" data-page-node-id="GdhMjHzBAHcv22JjMPFW43">31ms 完成，协议报文 TOOLS/CALL query 打印在 Messages。</p>
+    <h3 data-page-node-id="fsxD45Z94faeUlhKUY457V">验收 3：add_episode 写入 + query_memory 读回（✅ 截图确认）</h3>
+<pre data-page-node-id="kQ3H77dbpPYIQGpp6KQ5rj"># add_episode:填 一元二次方程/今天学了求根公式/0.8
+已记录 #1:一元二次方程(得分 0.8)
+# query_memory 再查:
+- [一元二次方程] 0.0天前 强度0.80</pre>
+    <p class="muted" data-page-node-id="sEJFAIaAJuQWtMRjhGxJ5G"><span class="key-g" data-page-node-id="Gp2g77VASIxWTswOL9NINQ">全链路闭环：写 → 存 → 衰减排序 → 读回，一次跑通。</span></p>
+    <h3 data-page-node-id="o0gxA9XH81lybj84wwgk4x">验收 4：Python 客户端三步（✅ 已跑通）</h3>
+    <p class="muted" data-page-node-id="PE0TccIEuwHeHvTDBCaJ3N">test_mcp_client.py：① list_tools 列两工具 → ② call add_episode（is_error=False）→ ③ call query_memory 读回。证明不靠 Inspector 也能纯代码调用——这就是未来 AI 应用接它的方式。</p>
+  </div>
+
+  <h2 data-page-node-id="nyxEzUz5HKbRbReuNPh11a">十、本节踩坑清单</h2>
+  <div class="card" data-page-node-id="gNvvehuuVBUvAvMfYMkZsl">
+    <table class="pit" data-page-node-id="PpgRU38FoYMc4kzcPJFuZe">
+      <tr data-page-node-id="jO4h9hqpsigr6FXKnvD6FA"><th data-page-node-id="RoHDYRO19OyHNuch9KMtmN">#</th><th data-page-node-id="jkUVujPpQcd7RQqb4YGZKY">坑</th><th data-page-node-id="AB8SuZ8z4hD4XlpC9d6W7z">表现</th><th data-page-node-id="1LiHBcZl0Innas1VuVcqO5">根治</th></tr>
+      <tr data-page-node-id="etFPh9n4e8HBWa2QLPW13R"><td data-page-node-id="OPmZXjDiXRnBt0UbULsjV0">1</td><td data-page-node-id="4CNom3zSruB81DjVKvPSZq"><b data-page-node-id="ohRiP1fp17IbrTbAjw1xrH">版本换代没察觉</b>（FastMCP → MCPServer）</td><td data-page-node-id="Y1vt02grQ76BBFOYVVnTLB">照 1.x 教程写，import 直接报错</td><td data-page-node-id="wiEY0zGEmXlJ8A8jliOFSE">装完先 pip show mcp 看版本；报错先怀疑"版本语法变了"，查官方文档而非旧教程</td></tr>
+      <tr data-page-node-id="INpZQCe0iOn234ls0RYiV1"><td data-page-node-id="PSFd2WvzxKjwhCcKVJWw5q">2</td><td data-page-node-id="gHZGsLYK9irBA95psvE1Pp">mcp dev 红点 Failed</td><td data-page-node-id="Ikm29ZMTCUUN8sNzxhG7dQ">Inspector 起不来</td><td data-page-node-id="GwUanVa0Kn4dJXEVoSVJts">它强制依赖 uv（pip install uv）——工具链前置条件要装齐</td></tr>
+      <tr data-page-node-id="UqwvMyIQFLisIeoG63AjRF"><td data-page-node-id="xx0O9Owwy9YFnM7tx8oIDs">3</td><td data-page-node-id="uQ2aRzVGuOGh8mz3I1qH7T">rows[2] 当单行用</td><td data-page-node-id="hv8GOEtSKqdaRmzrX1J9vC">IndexError</td><td data-page-node-id="xjue1Qdl3IMbQVuZLL9HEZ">rows 是<b data-page-node-id="HMK4LEDKCQ5R3CBJF1kvPl">多行元组</b>的列表，必须 for r in rows 逐行取 r[2]</td></tr>
+      <tr data-page-node-id="LnGW04trQKjqDVbtBThF7p"><td data-page-node-id="WH7asCx03BVNxET2yEq0KJ">4</td><td data-page-node-id="0ZThnpMJHZWxOGO0gEolTM">return 缩进进 for 里</td><td data-page-node-id="QCgUNql46aEvzLISxnWQhF">只输出最后 1 行</td><td data-page-node-id="CBZmPRJ1yHzs02o5GIHVpY">循环内 append、循环外 return（第 5 次踩）</td></tr>
+      <tr data-page-node-id="lw9O7XC9nfyJtM0yemSq9Y"><td data-page-node-id="Abn3PE2Bk4Zj9pHKBEpPFD">5</td><td data-page-node-id="2HUPNn1BIFzzqQd5a9h8sC">函数忘了 return</td><td data-page-node-id="mX0lk0fgJGNXw2l789Tqwe">工具返回 None</td><td data-page-node-id="QdjIiOdcJ5haqnm5PVHMft">工具函数<b data-page-node-id="SoCEW621TbXNDsR7SaR8CG">必须有返回值</b></td></tr>
+      <tr data-page-node-id="yFUigyeDVCSIXrvSwH1nCK"><td data-page-node-id="DpP0BDY2ghjTIRWR36NwJ3">6</td><td data-page-node-id="IqJ06jMzQxvo1x53npz4Mv">用 STUDENT 常量"代替"参数</td><td data-page-node-id="ZJuSCJJAgjdDHSitlVGH3n">参数失效，写死 stu001</td><td data-page-node-id="nedW9otRVikmpHJdaBdXHr">想"默认 stu001 但允许覆盖"→ 用默认值 <code data-page-node-id="xHrGMfXNG4iADuLAtITYI9">student_id: str = STUDENT</code></td></tr>
+      <tr data-page-node-id="ICa3FKXQHcN92daao3ijL8"><td data-page-node-id="UzlIykBPjzl87pCUe9B8vV">7</td><td data-page-node-id="KCfysT9v0jLJEg3bqLM8S2">相对路径 DB_PATH</td><td data-page-node-id="qAZddC3K0qBlMJPKzMJR0l">子进程找不到库/建错库</td><td data-page-node-id="hIHexFxYu3rBzc3Av5yoYY">用 <code data-page-node-id="4nNpN3sSXQIfmqjazccSkn">os.path.join(os.path.dirname(os.path.abspath(__file__)), ...)</code> 钉死</td></tr>
+      <tr data-page-node-id="G5W8FKCyX24MbDFPSY6CiR"><td data-page-node-id="KOJ2iUCHHtGKyI1vIksPJa">8</td><td data-page-node-id="H4JWH0NW3DWZBHteeVgX9O">conn.close() 忘关</td><td data-page-node-id="A2xgGRHQVpqfvbHpEtGrU8">连接泄漏</td><td data-page-node-id="CiZNR6gmS8LECQPh57n5zJ">用完即关；server 每次调用都开新连接，务必配对关闭</td></tr>
+    </table>
+  </div>
+
+  <h2 data-page-node-id="6PKpkURBhFHj8azDLYKlZf">十一、论文定位（答辩话术）</h2>
+  <div class="card" data-page-node-id="YUhRg0oMw6IksMFmzphHXO">
+    <ul data-page-node-id="7BRnF91WvMAfvTEUMlkRkB">
+      <li data-page-node-id="39jHDubu7zBF5hYC8xNuIC"><b data-page-node-id="EML3s8aFvnvyO3YhkqD0r2">第 6 章 RAG / 记忆系统可无缝升级</b>：学习伴侣的记忆读写、RAG 检索本质都是"工具"，论文可把检索链路包成 MCP Server，对接任意 LLM 宿主——<span class="key" data-page-node-id="gxLYi6vXZULbWxiIbduPdE">"我的记忆模块是标准协议服务，即插即用"</span>。</li>
+      <li data-page-node-id="bCFM6MiknFbBN1jeICMx1H"><b data-page-node-id="ekdCeaJGHpviaLrBsNjvms">工程化亮点</b>：用 mcp dev + Inspector 做协议级调试，Messages 面板展示 JSON-RPC 原始报文 = 工程规范性的实证素材。</li>
+      <li data-page-node-id="VEM8WhDAYWjFFUEHZHFnay"><b data-page-node-id="KLPoYmgaAcLu7YzHWnF0cr">面试话术</b>：能说出"我写过 MCP Server，理解 Host/Client/Server 三角色、stdio 传输、list_tools/call_tool 生命周期，踩过 2.x 改名坑"——Agent 应用岗的<span class="key" data-page-node-id="0p70AkN3EYA631RwPUCg7f">硬通货</span>。</li>
+    </ul>
+  </div>
+
+  <div class="footer" data-page-node-id="vRr9ZQPC6DNEmOWTMCLC3G">3.1 MCP 协议 · 学习笔记（详细版）· 2026-09-05 · 代码 agent_project/mcp_server.py + test_mcp_client.py（依赖 2.5b 记忆模块）</div>
+</div>
+</body>
+</html>
