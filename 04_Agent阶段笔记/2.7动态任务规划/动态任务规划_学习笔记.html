@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="6ecXe9wEjZ4R0Z8XyNb1fj">
+<head data-page-node-id="7uQHDSBOY9J9ENRMOlb4pg">
+<meta charset="UTF-8" data-page-node-id="kbZMCuAroK8qLpToi9X0eo">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" data-page-node-id="bbPJADPDfSaaKhvfZlF3J6">
+<title>2.7 动态任务规划 · 学习笔记（详细版）</title>
+<style>
+:root{
+  --bg:#0d1117; --panel:#161b22; --panel2:#1c2230; --line:#2d333b;
+  --text:#e6edf3; --muted:#8b949e;
+  --blue:#58a6ff; --green:#3fb950; --orange:#d29922; --red:#f85149;
+  --purple:#bc8cff; --cyan:#39c5cf;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--text);
+  font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;
+  line-height:1.75; padding:32px 20px 80px;
+}
+.wrap{max-width:960px;margin:0 auto}
+header{border-bottom:2px solid var(--line); padding-bottom:20px; margin-bottom:28px;}
+.tag{
+  display:inline-block; background:rgba(88,166,255,.12); color:var(--blue);
+  border:1px solid rgba(88,166,255,.3); border-radius:20px;
+  padding:3px 14px; font-size:12px; letter-spacing:1px; margin-bottom:12px;
+}
+h1{font-size:27px; margin-bottom:10px}
+.sub{color:var(--muted); font-size:14px}
+h2{
+  font-size:20px; margin:38px 0 16px; padding-left:12px;
+  border-left:4px solid var(--blue);
+}
+h3{font-size:16px; margin:22px 0 10px; color:var(--cyan)}
+p{margin-bottom:12px}
+.muted{color:var(--muted); font-size:13px}
+.key{color:var(--orange); font-weight:600}
+.key-g{color:var(--green); font-weight:600}
+.key-r{color:var(--red); font-weight:600}
+.key-b{color:var(--blue); font-weight:600}
+.quote{
+  background:linear-gradient(90deg,rgba(88,166,255,.10),transparent);
+  border-left:4px solid var(--blue); border-radius:0 8px 8px 0;
+  padding:16px 20px; margin:18px 0; font-size:15px;
+}
+.quote.warn{border-left-color:var(--red); background:linear-gradient(90deg,rgba(248,81,73,.08),transparent)}
+.card{
+  background:var(--panel); border:1px solid var(--line);
+  border-radius:10px; padding:20px; margin:16px 0;
+}
+.card.warn{border-color:rgba(248,81,73,.4); background:rgba(248,81,73,.05)}
+.card.ok{border-color:rgba(63,185,80,.4); background:rgba(63,185,80,.05)}
+.card.tip{border-color:rgba(210,153,34,.4); background:rgba(210,153,34,.05)}
+table{width:100%; border-collapse:collapse; margin:14px 0; font-size:13.5px}
+th,td{border:1px solid var(--line); padding:8px 10px; text-align:left}
+th{background:var(--panel2); color:var(--blue); font-weight:600}
+td{background:var(--panel)}
+tr:nth-child(even) td{background:var(--panel2)}
+pre{
+  background:#010409; border:1px solid var(--line); border-radius:8px;
+  padding:16px; overflow-x:auto; margin:14px 0;
+  font-family:Consolas,"Courier New",monospace; font-size:12.5px; line-height:1.6;
+}
+code{
+  background:rgba(110,118,129,.25); border-radius:4px;
+  padding:2px 6px; font-size:12.5px; font-family:Consolas,monospace;
+}
+pre code{background:none; padding:0}
+.flow{display:flex; gap:10px; flex-wrap:wrap; margin:16px 0}
+.flow .step{
+  flex:1; min-width:160px; background:var(--panel); border:1px solid var(--line);
+  border-radius:10px; padding:12px 14px;
+}
+.flow .step .n{
+  display:inline-block; width:24px; height:24px; line-height:24px; text-align:center;
+  background:rgba(88,166,255,.15); color:var(--blue); border-radius:50%;
+  font-size:13px; font-weight:600; margin-bottom:8px;
+}
+.flow .step .t{font-size:13.5px; font-weight:600; color:var(--text); margin-bottom:4px}
+.flow .step .d{font-size:12px; color:var(--muted)}
+ul,ol{padding-left:24px; margin:10px 0}
+li{margin:5px 0}
+.pit td:first-child{font-weight:600; color:var(--red)}
+.footer{
+  margin-top:40px; padding-top:16px; border-top:1px solid var(--line);
+  color:var(--muted); font-size:13px; text-align:center;
+}
+</style>
+</head>
+<body data-page-node-id="ICqbqS19cs6cQ5DCei4dCg">
+<div class="wrap" data-page-node-id="4qFibLT7rnthBAykEw1CjX">
+  <header data-page-node-id="ojdLHD1irpJMHHJvfwKKEY">
+    <span class="tag" data-page-node-id="V3clRC1gsU6nCR3wNwqRy3">阶段二 · 动态任务规划 · 详细版</span>
+    <h1 data-page-node-id="uFiJUKCJwaBwQ79fuVNR9T">2.7 动态任务规划（Plan-and-Execute）</h1>
+    <div class="sub" data-page-node-id="sNR8VJ08qEhT6ia3j8aoWn">把 2.5c 知识图谱焊进 2.6 四 Agent 流水线 → 路径由图谱状态实时"长"出来 → 论文第 5 章核心</div>
+  </header>
+
+  <div class="quote" data-page-node-id="kf9XaSkbkp3lEtbOzMOiH3">
+    <strong data-page-node-id="gA7tEvF1t5u06gyi3mucHk">动态任务规划</strong> = 每学完一个知识点（eval 判 ≥0.7），plan_node 就把掌握度<span class="key-b" data-page-node-id="gSnJq0Sp1tZmAUSU3TvjTM">写回图谱</span>，再问 <span class="key-b" data-page-node-id="Ae3q2vTxvuhbCEacRCFZ8l">recommend_next()</span> 现算下一站；图谱没候选就发 <span class="key-b" data-page-node-id="7xbk1r5H2c7lTdpqKRSDSB">done</span> 真正结束。路径不是任何人写死的，是"<span class="key" data-page-node-id="nwupKNvMvH1bngd3M6RUnB">地图（图谱）+ 进度（掌握度）</span>"在运行时算出来的。
+  </div>
+
+  <h2 data-page-node-id="r2HVvxxAfzI6qYpS9cJhAU">一、痛点：2.6 的规划是"假规划"</h2>
+  <div class="card warn" data-page-node-id="Uxv7iDx3yVFASFoBC8W3pG">
+    <table data-page-node-id="vxDidrJBzgjKVsMuKaH2x7">
+      <tr data-page-node-id="Ep8yASTNtbElJLqr48mMB7"><th data-page-node-id="FRQ0A225bKnc9gxaQlHvuD">对比</th><th data-page-node-id="HvVwFvfyqO6xedLSENu68n">2.6 的规划</th><th data-page-node-id="Ow4cmfSTuL8JCtV6CrPXRf">2.7 的规划</th></tr>
+      <tr data-page-node-id="Z5HqDG3vD2KTPSRPWXl4ka"><td data-page-node-id="3OFgyVVADRrkADgtQ2xUu6">依据</td><td data-page-node-id="Ld0dhGcySTiVkH8DV1kNYU">prompt 里写死的直线名单</td><td data-page-node-id="OZhyl0u5RWBV4WJcLjBFWX">图谱里的点和边（先修关系）</td></tr>
+      <tr data-page-node-id="G2G27rBJfK3zXVIDulhBGa"><td data-page-node-id="npARa7nZWvwSIbfUiBtycv">谁来算</td><td data-page-node-id="1ArLGW7VPrhG2Izq4PsgWX">LLM 照着名单"背"</td><td data-page-node-id="iZnSjd9sk2lJtltnoJg1m7">recommend_next() 确定性计算</td></tr>
+      <tr data-page-node-id="w24DFyOVxrm2eknu96Gbef"><td data-page-node-id="vTOHzsRpYZEI7PDf75sjqE">结果</td><td data-page-node-id="f58K9nxgzyCBe5iGkwHBn3">谁走都一样，换学生不换路</td><td data-page-node-id="Q6YrjK7woEOshFXIDKE5No">掌握度一变候选就变，<span class="key-g" data-page-node-id="lQUaTMbKtM0SmiqOGcQkIu">每个人走出自己的路</span></td></tr>
+      <tr data-page-node-id="AQGXm9IM54cTg7PB3wUl5W"><td data-page-node-id="SF3moAKVqHuvT3VDQ86naM">可靠性</td><td data-page-node-id="rcBlSVrXqV4KHpbjEwvTPT">模型可能乱说</td><td data-page-node-id="cDQwFdVlgmbzSdKGQP1Zdz">纯代码，可解释、可测试、可写进论文</td></tr>
+    </table>
+    <p class="muted" data-page-node-id="EdjW62TVRU6ez47HDdhYoE"><span class="key" data-page-node-id="O614RRl0YnfTiPtPNWvfLP">类比</span>：2.6 像旅行团发"固定行程单"；2.7 像给你一张 <span class="key" data-page-node-id="0KRhfm4zZDhXIQdbbIsmuH">地图 + 导航</span>——你从广州出发（起点），每过一座城考你一次，导航根据"你现在在哪、路通没通"现场规划下一站。<span class="key-b" data-page-node-id="RmPDgeaU11ZXzqGETXq8F2">行程单 vs 地图+导航，就是静态与动态的本质。</span></p>
+  </div>
+
+  <h2 data-page-node-id="TaxQ2DHupoUDzlGUMmjHMb">二、范式：Plan-and-Execute（规划-执行）</h2>
+  <div class="card" data-page-node-id="STqg0HZ23BxzbncCQHlpMh">
+    <p data-page-node-id="HJjwpmy7aW8Riwl9wT9QGa">2.6 是 <b data-page-node-id="UevYRKc17tNZG5JVdscxBa">ReAct 式</b>（走一步看一步）；2.7 换成业界任务型 Agent 的标准架构——<b data-page-node-id="Mdt3TPGXvNwdKLpbFlkzH4">规划不是一次性做完，是边走边动态调整</b>，"动态"两个字就来自这里。</p>
+    <div class="flow" data-page-node-id="cwSrPRmCBfXEecq4Gf9BDn">
+      <div class="step" data-page-node-id="3k4yGdm9pF6iLZIzHq0F9P"><span class="n" data-page-node-id="nDwJf2YUZbXst86N55SlMC">1</span><div class="t" data-page-node-id="BiVYkA49Qa1a00wkqm8Oge">Planner 规划器</div><div class="d" data-page-node-id="mBC3au7Rltl9cJRNeR0iyu">生成 / 调整任务清单</div></div>
+      <div class="step" data-page-node-id="7fcBSeGVofv9YF78vzTFV8"><span class="n" data-page-node-id="dHd3Wq8ozxhLkkVDCoGZDg">2</span><div class="t" data-page-node-id="f9SnZQ0ir2xFl0iUQNUWlX">Executor 执行器</div><div class="d" data-page-node-id="tqQYXujJT9qe1yFDgflZYu">按清单执行 tutor→quiz→eval</div></div>
+      <div class="step" data-page-node-id="bBz4CPzj5t2JVoRscRBGIA"><span class="n" data-page-node-id="YGc3v3gDCgXAcymufZD3Rq">3</span><div class="t" data-page-node-id="flzVibNCE4q9QLhs4Abs1a">Re-planner 重规划器</div><div class="d" data-page-node-id="z0HLXC19z1AEaKPF1ZNSTP">每执行一步，按结果回头调计划</div></div>
+      <div class="step" data-page-node-id="yn62Rbqi1e3plYxG5AWPOZ"><span class="n" data-page-node-id="6rq4t4EplBg95zvRCHaDb4">4</span><div class="t" data-page-node-id="QYrM1z56IK54KA2nDGqWFN">循环</div><div class="d" data-page-node-id="xE3GK8939WqtQyQ4yorR4q">直到图谱无候选 → done</div></div>
+    </div>
+    <div class="card tip" style="margin-top:6px" data-page-node-id="LCEoAcdOVgVO9Ia79jeXyj">
+      <b data-page-node-id="JriwvFg5wpvgsBnTGeO8fv">本节最关键的顿悟</b>：2.5c 的 <code data-page-node-id="pn2n1La3R9Iwij0VFeJD0l">recommend_next</code> 当时只是个练习题——<span class="key" data-page-node-id="Pd0Qf8ci3GFcMGzBw4YP0q">现在它的身份揭晓了：它就是规划 Agent 的大脑</span>。"推荐够得着的最差的"（掌握度&lt;0.7 且先修全≥0.7 里挑最弱）正是动态规划的核心。
+    </div>
+  </div>
+
+  <h2 data-page-node-id="jZPNiHADmG8HUefwYzQTDV">三、从 2.6 到 2.7：三个缺口 → 三个升级</h2>
+  <div class="card" data-page-node-id="jGAka4r3DXLzuo787ge4cc">
+    <table data-page-node-id="ieNdwA9tHD5vAKw9cav9pv">
+      <tr data-page-node-id="oiucCEO18HjafprllUsQHi"><th data-page-node-id="BuS0unggv1rUUURdgmaczZ">2.6 的缺口</th><th data-page-node-id="JwOhwm3hQgPammG033FaQE">后果</th><th data-page-node-id="s0IhNvyqUjUKWIzccIopxt">2.7 的补法</th></tr>
+      <tr data-page-node-id="WZB4kT98M15AOwzhsnNpGM"><td data-page-node-id="2TZYS4JZ90vEAsOelyT6n1">规划不"看"学生状态</td><td data-page-node-id="UrLU1nAhtqFE1GMKPQGG4o">系统是"瞎子"</td><td data-page-node-id="dygkfmAfjq7fG0hBFIJQ38">plan_node 先 update_mastery <b data-page-node-id="6qCMs5WOJvANkNIBEAvq6A">写回图谱</b></td></tr>
+      <tr data-page-node-id="YRpYn1filDNze8q2IJMffW"><td data-page-node-id="GDcZxlrcXCiAk0E2tuGzPU">规划靠 LLM 背名单</td><td data-page-node-id="6ZBp4dckm5iYbkWwCCGim7">系统是"笨的"，路径千人一面</td><td data-page-node-id="JYLcvCtrr9njhJH2sdjypm">问 recommend_next() <b data-page-node-id="qWDoao6FLfFf0W3iiMWqTy">图谱推荐</b></td></tr>
+      <tr data-page-node-id="RkIq6BjGdwPw2qSbEPj33u"><td data-page-node-id="fNfh7dmmBtBHm0i2Lg6w8h">plan 输出"无"图却不停</td><td data-page-node-id="eglz8F4sYU3BeJvVn0Pwlr">学完了还白烧一轮</td><td data-page-node-id="cJemtcTD8KWe4M5GMM8diE">无候选 → done <b data-page-node-id="3ixLyK1jmZcWCJGDc5BwbX">真正的结束</b></td></tr>
+    </table>
+  </div>
+
+  <h2 data-page-node-id="l5TFcnmjdsxJjNO8CQ2RmM">四、图结构 + plan_node（本节核心）</h2>
+  <div class="card" data-page-node-id="YQ48lEO31WJmmZl3TGlquG">
+<pre data-page-node-id="iFwv5aUnA8C3y4m8kxEnPg">START → tutor → quiz → eval ─┬─ mastery≥0.7 → plan ─┬─ 有候选 → tutor(讲新课)
+                              └─ mastery&lt;0.7  → tutor ┘  └─ 无候选 → END(学完了)
+                                              (回炉巩固)     (真正的结束信号!)</pre>
+    <p class="muted" data-page-node-id="ECCLLIJ7PPByyBRDxGni9H"><span class="key" data-page-node-id="4aAUxpELya5vELmXJOieby">关键改动</span>：2.6 是 plan→quiz（绕过导师），2.7 改成 <b data-page-node-id="UlWDSDnNrLdruOtUkOtMMP">plan→tutor</b>。讲新课当然先讲课再出题——导师成为所有路径的<b data-page-node-id="vGbtMlJI476lFncpjLhyPd">必经节点</b>，2.6"绕路导致 round 冻结"的死循环隐患<span class="key-g" data-page-node-id="LXUH2a4LzmiGlbsuMibf53">从结构上消失</span>。</p>
+<pre data-page-node-id="TNhQzgbsb8gDI1xk13DA6i">def plan_node(state):
+    conn = init_db(DB_PATH)
+    # ① 写回:把这次评估的掌握度存进图谱(地图进度刷新)
+    update_mastery(conn, STUDENT, state.get("topic"), state.get("mastery", 0))
+    # ② 问图谱:现在"够得着的最差的"是谁?
+    nxt = recommend_next(conn, STUDENT)
+    conn.close()
+    # ③ 决策:有候选 → 推进(换 topic);无候选 → done(真结束)
+    if nxt is None:
+        return {"action": "done"}
+    return {"action": "next", "topic": nxt}</pre>
+    <p class="muted" data-page-node-id="ZEQGBKwjCVJLvaQKnDhw3F"><span class="key-r" data-page-node-id="IHPziRT0oeVE3geZguMSQW">注意</span>：第 ③ 步只动 action 和 topic——topic 换了下一轮导师才讲新课；mastery / round / question 都不能碰。</p>
+  </div>
+
+  <h2 data-page-node-id="RRmiaCE8A8rxCkRqnRPzlA">五、谁在什么时候决定下一个知识点（验收核心）</h2>
+  <div class="card" data-page-node-id="jV9ARQfEp3ssHFTSNDhgbk">
+    <table data-page-node-id="EaRlWjyNU44S6w61eIGKbK">
+      <tr data-page-node-id="iIihzsoBCt9nR5da36VPmw"><th data-page-node-id="gzkjrsIvoZPVDf14UYy1EI">角色</th><th data-page-node-id="xPOMk3XW44y5z9KIpGIBUS">是谁</th><th data-page-node-id="u9sOLaGx64USMD6iQlJruV">决定什么</th><th data-page-node-id="GMytneUhvwOhxzmAYC9NnL">什么时候起作用</th></tr>
+      <tr data-page-node-id="UlC4pQQIfaBmOVgH9LIO63"><td data-page-node-id="PAEBounp2m4qGBfqFiqvmG"><b data-page-node-id="reYFUnZaCxANpBu9bUTtA2">规则</b></td><td data-page-node-id="7vKz6TEYGHwrwYWz5xNivY">你（setup_student 建图）</td><td data-page-node-id="xZQM5Z2krPBms1QqY1v81b">谁有<b data-page-node-id="7gX6HCb5IHnnRVldYKI8Kd">资格</b>当候选（先修门槛）</td><td data-page-node-id="d6Tb4k6QPeoT4jwDWQx2Ql">静态，一直存在，不是某个时刻</td></tr>
+      <tr data-page-node-id="n7baWTKPia4IlNgdl8wJuu"><td data-page-node-id="4oMobDJK8C5pMxnMibfs50"><b data-page-node-id="jTu7LW9hudXeYP9nhXMEMm">状态</b></td><td data-page-node-id="QIpgzAfN6gRe6RtFzCXAd6">测试（每轮答案→掌握度）</td><td data-page-node-id="QInFgFkqi5Yo27NM34L6dR">学到<b data-page-node-id="ut7HCpNWL9Gg9JmkoNbLFD">哪了</b>（进度）</td><td data-page-node-id="LQljMO7AUe9q5ljw5x5y5T">运行时不断变化</td></tr>
+      <tr data-page-node-id="BLh6yxMRf20tGBoQbgUboq"><td data-page-node-id="xcuXNcZPVPC5tYO1DzNHWQ"><b data-page-node-id="GRasTpHvuzNVB2RFlWiBKL">人选</b></td><td data-page-node-id="ZrLtxmRJ3BtM2y2fv5Yjot">recommend_next 算法</td><td data-page-node-id="rdD2Hx6Eu2TC6YNO4qno9n">够得着的里面<b data-page-node-id="TmuNZN0po0VlOQejXHMK98">具体选谁</b></td><td data-page-node-id="D5UReKbjpb2sjs9E5iVxWx"><span class="key" data-page-node-id="tbD4qxOVDaiVxg8TuWA3bE">每次 eval≥0.7 踏进 plan 的那一瞬间</span></td></tr>
+    </table>
+    <div class="quote" style="margin-bottom:0" data-page-node-id="6XdUQT7nOg3ECZFfstG8hV">
+      <strong data-page-node-id="QAM28YlN40BQZh4LUnBNYM">你能定义"游戏规则"（图谱）和"玩家表现"（答案），但"下一步推荐谁"是裁判（算法）在每次回合结束后按规则+表现现判的——你无法钦定，只能影响。</strong>改一个答案数字，掌握度变，下次过关后推荐就跟着变——这就是"动态"。
+    </div>
+  </div>
+
+  <h2 data-page-node-id="4rdtqYWRrRmGjuoTYSLPrz">六、测试验收</h2>
+  <div class="card ok" data-page-node-id="dpDZO5s1NTnhfO0e9HE3Yi">
+    <h3 style="margin-top:0" data-page-node-id="1Z4bVXBiK6NrYx0OivbgE5">主场景（真实 LLM，修正答案后）</h3>
+<pre data-page-node-id="4rJyPkuAhv54Raq9NNHesA">=== 场景 1: 学二次方程(答对) ===
+最终掌握度: 0.7          ← 最后一轮(函数图像)的评估
+plan 决策:  done          ← 全学完了!真正的结束信号!
+当前知识点: 函数图像      ← 中间发生了 next(二次方程→函数图像)推进
+图谱中二次方程掌握度: 1.0 ← 写回成功!</pre>
+    <p class="muted" data-page-node-id="2kksGEnyvNyrR8MvHdc4UM"><span class="key" data-page-node-id="6qlHi3LGsSJAE0Yz7V115w">教学宝藏</span>：测试答案笔误 x=0（应为 x=2）→ eval 判 0.4 → 回炉 → 永远 0.4 → round≥10 收工。<b data-page-node-id="9CgxRMXGBOSAuVMdem9mhc">这不是 bug，恰恰验证了</b>：① should_continue 判定正确；② 保险丝防死循环生效；③ 没到 plan 就不写回，图谱 0.0 未被污染——系统正确识别"没学会"并拒绝推进。</p>
+    <h3 data-page-node-id="chBeNcDeqGEsFKSuZYBz6X">桩版边界测试（不烧 LLM）16/16 全过</h3>
+    <table data-page-node-id="zPIygvRzjO7QUGKecEbsXh">
+      <tr data-page-node-id="86Tk6Q9iUi00ApFJefl6Yz"><th data-page-node-id="bvJPyD4jkc9nPjzcCOrEUV">场景</th><th data-page-node-id="lqIaZPfiCqKLxqHPoeRzRO">输入</th><th data-page-node-id="1CnfHmtdwdYComKH9LhAsk">断言</th><th data-page-node-id="rSoDxTnqgWb2UeX1yYdzND">结果</th></tr>
+      <tr data-page-node-id="RKsP6Oh6b6JX3xY5HKPdv0"><td data-page-node-id="wBofTqPAtZCcxpLmTd3lnV">1 沿链学完</td><td data-page-node-id="FpCGQxHzqkYlBMAkeIQVfA">二次方程答对</td><td data-page-node-id="X8M78LNJp4J9HOocmhagzW">action=done / topic=函数图像 / tutor 2 次 / eval 2 次 / 两知识点写回≥0.7</td><td data-page-node-id="i4zCi2Q5TUBC46Os4pZrj1"><span class="key-g" data-page-node-id="N16RxMpLgubIl0PQoXja7b">✅</span></td></tr>
+      <tr data-page-node-id="uGgnvYknUdm5FkxXKGN0Wo"><td data-page-node-id="MpDkiMtsMzTtwQyI8Iv7Lc">5 全学会再跑</td><td data-page-node-id="U53EnmNkkCE0pmJ9pWmPBy">起点函数图像答对</td><td data-page-node-id="GZsN4uZKk5sCBO5gFPXYxl">一轮就 done，eval 只 1 次</td><td data-page-node-id="A47yI9015iuqVRGW0n3mj1"><span class="key-g" data-page-node-id="POFqyarL2YpuLONkIDNsxF">✅</span></td></tr>
+      <tr data-page-node-id="5aoGYnof9YHN77dRK6AFfP"><td data-page-node-id="BVI9HVtmeH5t5Gxqvkk8OX">2 一直答错</td><td data-page-node-id="gdJJBX0pDWCV8Y3P56EDZC">答案"不会"</td><td data-page-node-id="dXhTIhSSEHahKc3IrgXt9C">保险丝 10 轮收场、topic 没变、图谱没被写回（0.0）</td><td data-page-node-id="CqMmfEczGJM2MZhZmjNgxH"><span class="key-g" data-page-node-id="z9yp1cEfSQ6gTBXt9aoTwv">✅</span></td></tr>
+      <tr data-page-node-id="AUXTvL5pv0GTndOvyknmAR"><td data-page-node-id="SvQQI8ObDxLKjSBwNIRrpA">3 多分支</td><td data-page-node-id="F7QJi0tYkZqpjp6PzuVm14">X0.9/Y0.4/C0.2，C 依赖 X+Y</td><td data-page-node-id="njXlILez8bUjXAzeQzXzwZ">推荐 <b data-page-node-id="rh20aO8RrfCGtUCBx1CXSc">Y</b>（C 被先修卡住；Y 无门槛够得着）</td><td data-page-node-id="Ior0amzQZqC1NxVfkcIjJK"><span class="key-g" data-page-node-id="DZ52upv4YGwlXpIlAvi5mt">✅</span></td></tr>
+      <tr data-page-node-id="EwuGqMqTtp7yEl2nDwDwXE"><td data-page-node-id="PSeYTx7fIpM2sJYqF8kf6Z">4 学生隔离</td><td data-page-node-id="ocu1UcNHZChSRttQwygFv3">stu003 与 stu002 同库</td><td data-page-node-id="4eDaqQXUaz9kZx1qQMRRVM">stu003.C 保持 0.2、无"函数图像"记录（不串数据）</td><td data-page-node-id="fIszDBnkGDWnHbxxgv58qE"><span class="key-g" data-page-node-id="2ywCDV1gc2PEKCcV2gKque">✅</span></td></tr>
+    </table>
+  </div>
+
+  <h2 data-page-node-id="h7vZuaYEw4C6Qv8Ulg8MeP">七、本节踩坑清单</h2>
+  <div class="card" data-page-node-id="84zROdnqt9M1iqv9sm5S7q">
+    <table class="pit" data-page-node-id="EXUVFD0cxiniMlCVdHF3yf">
+      <tr data-page-node-id="oyoLK8S3fJkk4VNUCKAxGV"><th data-page-node-id="igWl364al1UA0bNFwHyCYi">#</th><th data-page-node-id="JU3pyCcNBjrhE6KGVsMvpk">坑</th><th data-page-node-id="sfBvciXxreg3GXWShYt2Fp">表现</th><th data-page-node-id="Hq4Cgt59jXEQrlE6PGASPE">根治</th></tr>
+      <tr data-page-node-id="tsfjq4yAitDbWKMD2qTfnG"><td data-page-node-id="Yb8LIBPPa5BDwnoKL0UbXP">1</td><td data-page-node-id="OuknzHxrV5I0fZgPGsuf9E">概念：以为"路径是测试时写的"</td><td data-page-node-id="OAygjhblmW9D0uScIQ8M3X">复述验收题答偏</td><td data-page-node-id="7HGRIa29YkXgN5f7I16o3F">路径是运行时 recommend_next 现算的；setup_student 只布置棋盘（规则），invoke 只给起点和表现</td></tr>
+      <tr data-page-node-id="f80hsNH6tF0p6RwGOCCKG3"><td data-page-node-id="GYZc37TmhXHBrjWQXFnUYe">2</td><td data-page-node-id="AXYIIqMSDoolwkrC57MRDv">测试数据本身写错（x=0 vs x=2）</td><td data-page-node-id="iDS1HnWXekByyCmSHFEsB9">"答对"场景却判 0.4 走回炉</td><td data-page-node-id="C4UqKQC1sDLb13wt7uJLsK">验证脚本的输入数据也要自查——跑不出预期先怀疑数据，再怀疑代码</td></tr>
+      <tr data-page-node-id="EHueaOHfH0szmGlBywCn7D"><td data-page-node-id="ShUsxeDOw85PFpFG7KF3W8">3</td><td data-page-node-id="X0D0HGsyDZtEhFaprOhNSh">state.get("topic") 不给默认值</td><td data-page-node-id="De20IGkO3KxOJ5tLlbIRqn">topic 缺失时返回 None 写进库</td><td data-page-node-id="KbwE6llqrArZLNV6EDRE10">取"必须存在"的字段用 state["topic"]；取"可能没有"的才用 .get(key, 默认值)</td></tr>
+    </table>
+    <p class="muted" data-page-node-id="GL34sp8mFrxJdyNGnDVGBi"><span class="key" data-page-node-id="hxkuuRGVPtvVpD1GtBn6Qs">遗留问题（2.8 论文系统再解）</span>：quiz_node 沿用外部 question，推进到新知识点后出现"topic=函数图像、考题却是二次方程的题"的错配。真实系统应在 topic 变更时清空 question，或每知识点绑定固定题库。</p>
+  </div>
+
+  <h2 data-page-node-id="H8RgDFECRo7B1wdpA4aPGv">八、论文定位（答辩话术）</h2>
+  <div class="card" data-page-node-id="hwAmC7NkoWGZHAfANxS79z">
+    <ul data-page-node-id="J73aVEPuCae08Qq2Xl06GQ">
+      <li data-page-node-id="A0wNazBBXDpq7Qf6DXPiTa"><b data-page-node-id="W395HFihZMgoK2JbQYE3iR">第 5 章核心立论</b>：路径调整是<span class="key" data-page-node-id="ZNxkC8C5A8oGSWaKEOIJZE">基于知识图谱状态的确定性计算</span>（recommend_next），不是模型随机发挥——可解释、可测试。</li>
+      <li data-page-node-id="45hQwVScN4CCq3UwNoSBOi"><b data-page-node-id="1jNJ3taGuyPHWrnRXlbgo1">创新点表述</b>：不推荐"掌握度最低的"，而是推荐"<span class="key" data-page-node-id="SQDpeBIKozR4T3T9ySrjwu">够得着的最差的</span>"（先修全达标里最弱的）——两关判定 + 边表就是抓手。</li>
+      <li data-page-node-id="wixjtM5b2pA0za3s3GGx50"><b data-page-node-id="41R94Fr2p7GtLdLanxoHia">对比实验素材</b>：同一份代码改一个答案数字走出两条完全不同的路（答错回炉 vs 答对推进到 done）——动态性的实证。</li>
+      <li data-page-node-id="EadUG5va7EZUsVybJFOe3j"><b data-page-node-id="E9JVz9MBEvmJnJjNDShSvn">防死循环方法可写</b>：路径枚举（算法终止性）+ 必经节点计数 + 保险丝，答辩被问"会不会死循环"直接答这套。</li>
+    </ul>
+  </div>
+
+  <div class="footer" data-page-node-id="eW2IfAoOsw3zydg8YPihEU">2.7 动态任务规划 · 学习笔记（详细版）· 2026-09-05 · 代码 agent_project/dynamic_plan.py</div>
+</div>
+</body>
+</html>
