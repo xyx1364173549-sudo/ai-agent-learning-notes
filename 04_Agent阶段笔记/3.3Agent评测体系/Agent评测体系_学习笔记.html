@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="RrUUXXL4Llrgs5WDH1HtXM">
+<head data-page-node-id="w5dagpgYCh0n45F5ADxuax">
+<meta charset="UTF-8" data-page-node-id="sDRCed1ABh5IGIRZyWpwEH">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" data-page-node-id="mhd5kiq2RcChiLv3qZIyK9">
+<title>3.3 Agent 评测体系 · 学习笔记（详细版）</title>
+<style>
+:root{
+  --bg:#0d1117; --panel:#161b22; --panel2:#1c2230; --line:#2d333b;
+  --text:#e6edf3; --muted:#8b949e;
+  --blue:#58a6ff; --green:#3fb950; --orange:#d29922; --red:#f85149;
+  --purple:#bc8cff; --cyan:#39c5cf;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;line-height:1.75;padding:32px 20px 80px}
+.wrap{max-width:960px;margin:0 auto}
+header{border-bottom:2px solid var(--line);padding-bottom:20px;margin-bottom:28px}
+.tag{display:inline-block;background:rgba(88,166,255,.12);color:var(--blue);border:1px solid rgba(88,166,255,.3);border-radius:20px;padding:3px 14px;font-size:12px;letter-spacing:1px;margin-bottom:12px}
+h1{font-size:27px;margin-bottom:10px}
+.sub{color:var(--muted);font-size:14px}
+h2{font-size:20px;margin:38px 0 16px;padding-left:12px;border-left:4px solid var(--blue)}
+h3{font-size:16px;margin:22px 0 10px;color:var(--cyan)}
+p{margin-bottom:12px}
+.muted{color:var(--muted);font-size:13px}
+.key{color:var(--orange);font-weight:600}
+.key-g{color:var(--green);font-weight:600}
+.key-r{color:var(--red);font-weight:600}
+.key-b{color:var(--blue);font-weight:600}
+.quote{background:linear-gradient(90deg,rgba(88,166,255,.10),transparent);border-left:4px solid var(--blue);border-radius:0 8px 8px 0;padding:16px 20px;margin:18px 0;font-size:15px}
+.quote.warn{border-left-color:var(--red);background:linear-gradient(90deg,rgba(248,81,73,.08),transparent)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:20px;margin:16px 0}
+.card.warn{border-color:rgba(248,81,73,.4);background:rgba(248,81,73,.05)}
+.card.ok{border-color:rgba(63,185,80,.4);background:rgba(63,185,80,.05)}
+.card.tip{border-color:rgba(210,153,34,.4);background:rgba(210,153,34,.05)}
+table{width:100%;border-collapse:collapse;margin:14px 0;font-size:13.5px}
+th,td{border:1px solid var(--line);padding:8px 10px;text-align:left}
+th{background:var(--panel2);color:var(--blue);font-weight:600}
+td{background:var(--panel)}
+tr:nth-child(even) td{background:var(--panel2)}
+pre{background:#010409;border:1px solid var(--line);border-radius:8px;padding:16px;overflow-x:auto;margin:14px 0;font-family:Consolas,"Courier New",monospace;font-size:12.5px;line-height:1.6}
+code{background:rgba(110,118,129,.25);border-radius:4px;padding:2px 6px;font-size:12.5px;font-family:Consolas,monospace}
+pre code{background:none;padding:0}
+.flow{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0}
+.flow .step{flex:1;min-width:160px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.flow .step .n{display:inline-block;width:24px;height:24px;line-height:24px;text-align:center;background:rgba(88,166,255,.15);color:var(--blue);border-radius:50%;font-size:13px;font-weight:600;margin-bottom:8px}
+.flow .step .t{font-size:13.5px;font-weight:600;color:var(--text);margin-bottom:4px}
+.flow .step .d{font-size:12px;color:var(--muted)}
+ul,ol{padding-left:24px;margin:10px 0}
+li{margin:5px 0}
+.pit td:first-child{font-weight:600;color:var(--red)}
+.footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);font-size:13px;text-align:center}
+</style>
+</head>
+<body data-page-node-id="QkmA8GE9JmdgGDXOKNAe4e">
+<div class="wrap" data-page-node-id="SY2dRikGOmRY6LQFxA1UPw">
+  <header data-page-node-id="i0bCXmnqpNnZsXZLQedYrC">
+    <span class="tag" data-page-node-id="eBu9zVoomU07PYcHM8z6Wy">阶段三 · Agent 评测体系 · 详细版</span>
+    <h1 data-page-node-id="58A8wgi57EQtnJRDQGYSfi">3.3 Agent 评测体系</h1>
+    <div class="sub" data-page-node-id="ionNPvU1kP6Nl6fMH0qFDO">把"肉眼测"升级成"机器自动打分" → 用数字回答"你的 Agent 到底多好"</div>
+  </header>
+
+  <div class="quote" data-page-node-id="f04st9AP4LQzPFro9EDtmf">
+    <strong data-page-node-id="pfEPpr4fxwADOQuydOONEH">评测（evaluation）</strong> = 出一张<span class="key-b" data-page-node-id="9MD51nDNpncjXLvKDKpEJg">固定卷子</span> + <span class="key-b" data-page-node-id="W2EAFFAryy29Kj2dOjfbOW">机器自动批改</span> + <span class="key" data-page-node-id="0hzsciQmu9oatkAUVpF35C">算出分数</span>。三个标准动作：① 固定输入（题目写死）② 多轮取平均（跑 N 次）③ 微妙用例（造难判的题）。核心目标是回答：<b data-page-node-id="pUfSY3w7zgWjNpTqHkcr0J">你的 Agent 到底有多好？</b>
+  </div>
+
+  <h2 data-page-node-id="NwudXNHODONiNBDxon3U15">一、痛点：手工测试的三个致命伤</h2>
+  <div class="card warn" data-page-node-id="GFwIOlCcLrR1VS6EKB05i7">
+    <table data-page-node-id="Xez5BnaBiDCrvMDT5vSxdl">
+      <tr data-page-node-id="wQcSTpyIHVACpw2gFbEiLH"><th data-page-node-id="I7MFwRyyAIbFSQDZMysCUD">手工测试</th><th data-page-node-id="GsVbpHqgxsHK29zw00qcA6">后果</th></tr>
+      <tr data-page-node-id="GvACwzE1c9CPnoWZ1ANzeN"><td data-page-node-id="SJIPc2OPY8hWRQUw1B0CpP">写死 3 个场景，肉眼盯输出</td><td data-page-node-id="foZwKdXJJv5GqtexfzzK4D"><b data-page-node-id="IWFwQEuXtMpG8NqNNHa0Pu">不可重复</b>：改一行又得重新肉眼确认</td></tr>
+      <tr data-page-node-id="LfMCgIxWgD4OcVlfTeIuBd"><td data-page-node-id="gIpt1r2FToIiFsU4aAhxBr">"我感觉还行"</td><td data-page-node-id="jLBNsIatnS2cWTAQLro0bM"><b data-page-node-id="T8HjsWbKA2NRyFj6Q6sFQ5">没数字</b>：说不出一个百分比</td></tr>
+      <tr data-page-node-id="6AuDYS1YHhDkUVweC5XNuj"><td data-page-node-id="RtyRFrqzNwH74PSa4DW0SZ">只测了 3 个场景</td><td data-page-node-id="205VGvjGUTUmiZlCelFmU5"><b data-page-node-id="VapBRkNCTBShS4vJnwbULD">会漏</b>：几十种情况没试</td></tr>
+    </table>
+    <p class="muted" data-page-node-id="1O2ztZ2BbLZHsmWIe5J9UA"><span class="key" data-page-node-id="kbDVW6EePtBQvPjPrMYuHv">类比</span>：手工测试 = 老师一次出一道题，肉眼看对错（累死）；自动评测 = 出一张卷子，机器批改，算出分数。</p>
+  </div>
+
+  <h2 data-page-node-id="nbJLE8JEVm9rqMaYx7areQ">二、评测三件套</h2>
+  <div class="card" data-page-node-id="zEUv6gtOGsTldzO9GrcLUy">
+    <table data-page-node-id="WADlsS42h9IQBJar2BeYZV">
+      <tr data-page-node-id="XlvPTEFjiBP1PHsEok36qg"><th data-page-node-id="DADsWObwKXX3FdJ22kqNt1">三件套</th><th data-page-node-id="Tn4llj1TYj0egGUC0QvrDu">作用</th><th data-page-node-id="45ZAItn2A9X9PaQkzl05IT">类比</th></tr>
+      <tr data-page-node-id="2mlZdxkfVLLjEVfFLfrUs2"><td data-page-node-id="Vyvyq5FcxQRcvpIQgAT6YL"><b data-page-node-id="ng91GsrKHrhVyxmG3D1OkQ">评测集</b></td><td data-page-node-id="ywr4YfLwsic8lsV6Cch0lM">一堆用例，每条 = 固定输入 + 期望结果</td><td data-page-node-id="kIAkwD5i6WlDpBeIXZX9Ob">老师出的卷子</td></tr>
+      <tr data-page-node-id="Y42xSSLnBSywTDLD7kgUmE"><td data-page-node-id="tnfwoUNJWKLD2U9CVnU5Mu"><b data-page-node-id="NriiEzmvjvRY2nHRRbO4Zx">执行器</b></td><td data-page-node-id="KyrzJhzsBv0FcyCeoR26Mq">把用例喂给 Agent，拿到实际输出</td><td data-page-node-id="9Ija8DoGQWf8QdujahkEcC">学生做题</td></tr>
+      <tr data-page-node-id="jPu6hRUAmkADdGSVFu6YLs"><td data-page-node-id="aCs25lw0dXIfvDYuNiTKxp"><b data-page-node-id="ic2DcueGxCS6sZ2VaxeVGU">打分器</b></td><td data-page-node-id="Hx7lN772Y8x6oa8A9XvAvw">对比"期望 vs 实际"，算成功率</td><td data-page-node-id="m0bz4pYrkHQvFOwaGUqC0h">老师批卷子</td></tr>
+    </table>
+    <p class="muted" data-page-node-id="zrChUa7t0xhnA1iD1LTCwo">关键：评测集题目<b data-page-node-id="FjrstF6BPwXCRDU5lmQLn8">写死</b>，不靠 LLM 随机出题——评测要"可重复"，随机性会污染结果。</p>
+  </div>
+
+  <h2 data-page-node-id="cCad1uxMHWyRZijwVrYKKr">三、两个指标，各考一件事</h2>
+  <div class="card" data-page-node-id="QGwaOjrSPNSPb30LH6Y5VE">
+    <table data-page-node-id="zDnurdneAPIZ37sCFExx3A">
+      <tr data-page-node-id="YwZBByh6tEor3Hq3sQyjSz"><th data-page-node-id="nepMXtGotJ0RZL3zNQtTFw">指标</th><th data-page-node-id="YMIgBMH8HTwiGKdtfblH73">评谁</th><th data-page-node-id="P7dXeQtUuMEKtGfHxE5VsE">通俗问法</th></tr>
+      <tr data-page-node-id="xMxGWYDP0p6TqsMjn6NWlU"><td data-page-node-id="LUo3dibrMga19uD9d4RKdU"><b data-page-node-id="UE0C8JAk4rfPZm7TAOyfcd">端到端成功率</b></td><td data-page-node-id="JAFZmombI3ClsjYps84agh">数学辅导 Agent（eval_node）</td><td data-page-node-id="ASUAgMZzgacJF1QFl6Ci28">"整张卷子做对几道？"</td></tr>
+      <tr data-page-node-id="eGJeKkCblXkqYDXQ6rN6HT"><td data-page-node-id="KjmNOErNcTEJ6GpDAK0V3U"><b data-page-node-id="vI8h1nfbqh0WIrhOfQIzI2">工具选择准确率</b></td><td data-page-node-id="jBE13oV8hAjY0GNS8kello">天气/计算 Agent（mini_agent）</td><td data-page-node-id="smwkUsnHysa0n6cJyvFBD2">"该用锤子还是扳手，选对几道？"</td></tr>
+    </table>
+    <p class="muted" data-page-node-id="K4w0Qr8iFFJgDLUExuB4qE">端到端看<span class="key-b" data-page-node-id="s6XskBkANDPkSeDyRGwDNf">结果</span>，工具选择看<span class="key-b" data-page-node-id="qmNEBaTEi7PBCwCVajjSwC">过程里"选工具"这一步</span>。</p>
+  </div>
+
+  <h2 data-page-node-id="xoP4ZJXIG9cFFYcjXfCfDP">四、⭐ 多轮取平均（对抗 LLM 随机性）</h2>
+  <div class="card ok" data-page-node-id="KtPpiCDbS0Ml0PE5xCCpqL">
+    <p data-page-node-id="lB0szmgZHFJ5UZYMovNIWN">LLM 有随机性（temperature 采样），所以单次结果不可信：</p>
+    <div class="quote" data-page-node-id="w0UVI3Urf0QZkFF3uzVmC5"><b data-page-node-id="HOQiRA5mJ7VD4LXtFjTtwv">跑 1 次 = 得到一个"数字"；跑 N 次 = 得到一个"可信的数字"。前者是彩票，后者是数据。</b></div>
+    <p data-page-node-id="VBpIkKVtnjR3tHlW8mEWyB"><b data-page-node-id="hJl4Cbub33WVSl4W2uTW1l">骰子类比</b>：掷 1 次出 6，不能说"总出 6"；掷 30 次，才能说"概率约 1/6"。</p>
+<pre data-page-node-id="tCgjQL6uN6gVGIFwe53taP"><code data-page-node-id="j5oLIkxX1nAjRIBjdOoafD">def evaluate(rounds=3):
+    rates = []
+    for i in range(rounds):
+        correct = 0
+        for topic, question, answer, expected in CASES:
+            if run_case(topic, question, answer) == expected:
+                correct += 1
+        rates.append(correct / len(CASES))
+        print(f"第 {i+1} 轮：{correct}/{len(CASES)}")
+    print(f"平均成功率：{sum(rates)/len(rates):.0%}（{rounds} 轮取平均）")</code></pre>
+    <p class="muted" data-page-node-id="1x1wG4m9JYAo3CkBc5aFAg">关键认知：跑 N 次不是要改变数字，而是给你"<b data-page-node-id="igMuEBYtBXghCIlWOSE4I5">这个数字可不可信</b>"的判断力。判数学对错确定性高（3 轮都满分正常），但"作文好不好"这类主观题随机性大，多轮取平均从"多余"变"必须"。</p>
+  </div>
+
+  <h2 data-page-node-id="q8eSRfwI6NQ7vHJTQVRbV6">五、⭐ 微妙用例（别只考"1+1=2"）</h2>
+  <div class="card warn" data-page-node-id="GXPMkQdvCmhhtUrUtI6g8a">
+    <div class="quote warn" data-page-node-id="BDTXylEcZFDNEizxUfeZwY"><b data-page-node-id="wE8x1IyfRk1MMK7WBLbmNv">满分有两种可能：① 学生真是学霸 ② 卷子只考了"1+1=2"。</b></div>
+    <p data-page-node-id="RsLfYVAokpOjkHESwChC3a">你最初的用例全是"非黑即白"，LLM 闭眼满分——测不出真实判断力。要造"难判"的边界用例：</p>
+    <table data-page-node-id="S3bVcjStTWX67DVszgtels">
+      <tr data-page-node-id="VJFpBEDW4oglXcSPiGjBAY"><th data-page-node-id="yerlTuQG7W3X4wjkgDXtne">类型</th><th data-page-node-id="HMH5RYSEEy8uuDErbjLtF3">例子</th><th data-page-node-id="nVuDyzpHewVQ1dUprQaAzT">考什么</th></tr>
+      <tr data-page-node-id="yZ6o6xliprRjgujdnKXGNe"><td data-page-node-id="3owfgo0AnPaxrIyDP7eLY4">漏根</td><td data-page-node-id="5xy4BfqR58vTD3Vw8ZEGq2"><code data-page-node-id="BgqwW2m7TRKJZPXcftLsVc">x²-4=0</code> 只写 <code data-page-node-id="V1DQda5hkwKoF04qOAH1f6">x=2</code></td><td data-page-node-id="HY87CIB1vL3BtjdWTmBLRO">会不会被"部分正确"蒙骗</td></tr>
+      <tr data-page-node-id="SDiC77vnbvNSISb39IWeP5"><td data-page-node-id="yut2yhKNWWwHEcBqPSERaK">符号反</td><td data-page-node-id="k3A9292C4Nu5tstFBT2HT8"><code data-page-node-id="s4fF4nVbUsybKHVlxMtHV1">(x+2)(x+3)</code>（数字对，符号错）</td><td data-page-node-id="c0YVkOVUpXt1bpV1o4JktJ">会不会被"过程像模像样"蒙骗</td></tr>
+      <tr data-page-node-id="1sPDr6wPT8xAPJsZLN4Klf"><td data-page-node-id="opFQ2HXqi9CcLDdU9tB8Tj">方法不同</td><td data-page-node-id="up6Cn2shOaKJnjbKDj0zpV">用求根公式而非因式分解，结果对</td><td data-page-node-id="EtSaRZUHozGcNlVqEOZNMR">会不会误杀"非标准解法"</td></tr>
+      <tr data-page-node-id="oqIB5DDmYASQFkXYWV4jNo"><td data-page-node-id="qLpmGniazhHqG8lh3fNuJD">过程简略</td><td data-page-node-id="TaUEjN9TTWGomh740tjYX8">答案对，没写展开过程</td><td data-page-node-id="dJAIAlZ5q1HDTEOWKfLbHA">会不会误杀"过程太短"</td></tr>
+    </table>
+    <p data-page-node-id="uuCgzFqOJEhYj6gqowI98L">工具选择的微妙用例，考的是<b data-page-node-id="0CcwLDwe6a2jC7raMbZVVo">模糊边界</b>：</p>
+    <table data-page-node-id="AN0y7fdPu0TM6OmZPXbIFd">
+      <tr data-page-node-id="SVP3KoKSCaS83Q1uQAGCnP"><th data-page-node-id="cDvK73WhFMTQg2PU5rNoBC">用例</th><th data-page-node-id="ZqjZJn2cdu243EeD236ynV">陷阱</th><th data-page-node-id="tlIgKYbmdviAzVNQTQqJL3">考什么</th></tr>
+      <tr data-page-node-id="cRLmxbEbCL7MKIDhYV7n6m"><td data-page-node-id="rvGEMTkY1TYYxKgXM2x9UM"><code data-page-node-id="GQy7DkIh58L29pRkcfOPDp">明天适合去爬山吗</code></td><td data-page-node-id="Dm7vGfTRfqmv4p4C2152M2">没提"天气"</td><td data-page-node-id="OkBpNQ2UCgpytF9olsX0m6">能不能透过字面看意图</td></tr>
+      <tr data-page-node-id="nkXqLkStq6tnzBxytJeFx7"><td data-page-node-id="UTjhJiqimEZm2szRzRhlWW"><code data-page-node-id="H8Z9mhyMRuEiRsgssyIFDh">今天出门要带伞吗</code></td><td data-page-node-id="A0Kdl95qtAg75xTihsn3AR">"带伞"隐含"下雨"</td><td data-page-node-id="P83uDSeCQpz2I3kykuGQgc">能不能做语义联想</td></tr>
+      <tr data-page-node-id="429LWB6pD9Hufo4zDpjfPU"><td data-page-node-id="BKNWkFvMV9zsdBPA9RK0da"><code data-page-node-id="M5dty5MxuoB1PG7U04SsvO">北京到上海有多远</code></td><td data-page-node-id="nw7jEjCBgrg4HLavMFAaOY">两个工具都不匹配</td><td data-page-node-id="f5N05URD3iocRa5YhcQTfU">会不会没工具也硬凑</td></tr>
+    </table>
+    <p class="muted" data-page-node-id="1CmHurSZNanvH5mcPYjqVD">前两类考"<b data-page-node-id="L2YN1dnQYARiFaqM4sziPl">该调时联想到</b>"，后一类考"<b data-page-node-id="ivtvVhj6WJi8K1z0XDWhMo">不该调时忍住</b>"。加进去后成功率会掉，<span class="key" data-page-node-id="pHgkbKzOXUg9nFnaimzhb1">掉下来的那几题，才是你 Agent 真正的短板</span>。</p>
+  </div>
+
+  <h2 data-page-node-id="6fzmKHSg8SNOZWC5TzFyGD">六、⭐ tool_calls 三层嵌套解析</h2>
+  <div class="card" data-page-node-id="JaKwvo8AvVm14pESmSEsa6">
+    <p data-page-node-id="edYo7sx7ohqhjTVJXB0UsZ">LLM 选工具时返回的 <code data-page-node-id="JofTj10MisGPyBC2ShvmBR">msg</code> 长这样：</p>
+<pre data-page-node-id="syW24J3qW5oycwrebUxph7"><code data-page-node-id="apaSxmhLR0Fr83XrW9Q93l">msg = {
+    "role": "assistant",
+    "content": None,              # 调工具时不写正文
+    "tool_calls": [               # 第①层：列表（可能调多个工具）
+        {
+            "id": "call_xxx",
+            "function": {         # 第②层：字典（函数信息）
+                "name": "get_weather_tool",   # 第③层：字符串（工具名）
+                "arguments": '{"city": "北京"}'
+            }
+        }
+    ]
+}</code></pre>
+    <p data-page-node-id="MR4FNWqn0kzLsu3GnQUCLO"><b data-page-node-id="UeZIeOdJIDvInFRUYSfoR0">为什么三层？</b> OpenAI 协议：一次回复可能并行调多个工具（最外层用<span class="key-b" data-page-node-id="c1moBgKeFsMN6JlPJ9Dbsc">列表</span>）；每个工具调用有一堆属性（用<span class="key-b" data-page-node-id="yE01wZCtIl2ZiZFc5YRLC7">字典</span>）；function 里又有 name/arguments（再套一层<span class="key-b" data-page-node-id="E6nHD5XTh0krFY0GCt6yLm">字典</span>）。</p>
+    <p data-page-node-id="F9C2UAEDuTQZD3VnnbyC8d"><b data-page-node-id="MhAD5uyiRJJHuT5dhK1Ik4">核心口诀</b>：看它是列表还是字典——遇到<span class="key" data-page-node-id="A49124I6etlGACn0hIhCR6">列表</span>用 <code data-page-node-id="KIyIR48rUWKF8uGmpQFJoq">[0]</code> 下标，遇到<span class="key" data-page-node-id="JCAF4jS5bkTO5Ml5Z2I5fN">字典</span>用 <code data-page-node-id="b9kSfYIOxzPs47E3YZQ1qW">["key"]</code> 键。</p>
+    <p data-page-node-id="iYvovua52Fys2ntdNPJUvg">所以 <code data-page-node-id="b5BwF8tmbDzWsdJaucP2pe">tool_calls[0]["function"]["name"]</code> = <b data-page-node-id="Iu1qh5SKxbQkETs3L2Mx21">「下标 → 键 → 键」交错钻三层</b>。</p>
+<pre data-page-node-id="EJvh3PprtIq8rKSIkREo7C"><code data-page-node-id="fD3Jz9FFjxMe6YvG6WOioe">tool_calls = msg.get("tool_calls")   # 没调工具时拿到 None
+if tool_calls:                        # 先确认有包裹，才拆箱
+    return tool_calls[0]["function"]["name"]
+else:
+    return None                       # 闲聊，没调工具</code></pre>
+    <table data-page-node-id="Bq6RpXFofiGrIUxScGKEot">
+      <tr data-page-node-id="TdzjxE9C4g5I2yRo0lF8Mw"><th data-page-node-id="Vy5mXOH3mMLe2SZALgIAlO">错误写法</th><th data-page-node-id="7MaHMA0EcJwW7gwYB3PNCV">报错</th><th data-page-node-id="RpflfrLTkzOvxzw5kp1MG1">原因</th></tr>
+      <tr data-page-node-id="D1HctTXBAG1LLqxAHxoXM6"><td data-page-node-id="6ZflBgjJ5B9A3rfN0O0tjg"><code data-page-node-id="rPSNMnikffcWUrwkBqeCZU">tool_calls["name"]</code></td><td data-page-node-id="lbCW9Gy9nQVO4UtEHD0bWi">list indices must be integers</td><td data-page-node-id="t9DoY9Ftb0SYKsehsDRfcf">列表不能用字符串下标</td></tr>
+      <tr data-page-node-id="KaL9kHmpeAdggKUAFniXcu"><td data-page-node-id="dLxSKUVmfuTtkEFWCX8WhX"><code data-page-node-id="9NxmKPLLC36buRe7Gwikx6">tool_calls[0]["name"]</code></td><td data-page-node-id="LxkIY1cxcRqjYXjkW2w6PW">KeyError: 'name'</td><td data-page-node-id="gbDvK4ZWPfapNKA92Mof6O">name 藏在 function 里</td></tr>
+      <tr data-page-node-id="b4ZYtcuGEZ9dA2PZUtwuOA"><td data-page-node-id="T4hiALjX4bXOiMWRLotzZx">不判断直接 <code data-page-node-id="QH2ktlNdJjUFVmlGmPEBNE">tool_calls[0]</code></td><td data-page-node-id="J7BB10ykiYxCbndv2RFIpc">'NoneType' object...</td><td data-page-node-id="6cUOkBtiWZ7e2IMX2Qk5ZD">没调工具时是 None</td></tr>
+    </table>
+  </div>
+
+  <h2 data-page-node-id="QNzES0jPOrwfkdNUUJ1hor">七、测试验收</h2>
+  <div class="card ok" data-page-node-id="rnLkpqkqfQ5msF6GBgIXGS">
+    <p data-page-node-id="H0cesi9BmOIKTMKxyKqHbj"><b data-page-node-id="XuU8gRs34ynsIuq7WyjeDz">验收 1：端到端成功率</b>（✅ 3 轮取平均 100%）</p>
+<pre data-page-node-id="p0lBkTCvLwvUsI1HGuPRr3"><code data-page-node-id="ejncJt0MAWt8UZlewTDopX">第 1 轮：14/14
+第 2 轮：14/14
+第 3 轮：14/14
+平均成功率：100%（3 轮取平均）</code></pre>
+    <p data-page-node-id="74kCxBBHh7drORxP94YD3j"><b data-page-node-id="dEdhdmaprmcxfNtN1QOMAL">验收 2：工具选择准确率</b>（✅ 单次 8/8，⚠️ 3 轮平均待补）</p>
+<pre data-page-node-id="7NXKkqPz1KFlwViB7TitoU"><code data-page-node-id="9lxBvAsa6dgOZXLuUGzXfR">工具选择准确率：100%（8/8）</code></pre>
+    <p class="muted" data-page-node-id="8B0hEPF323ieKoVGwQshrP">8 条用例（天气 3 + 数学 3 + 闲聊 2）单次全对，但含送分题（"你好/谢谢"闭眼都对），<span class="key" data-page-node-id="0BNhf2nLQQSTvCZ3YzeOB7">数字有水分</span>。已提供"加 3 条微妙用例 + 跑 3 轮"改造代码，⚠️ 待补跑。</p>
+  </div>
+
+  <h2 data-page-node-id="3ZmDKyKyxvjkhCJPnAiH7x">八、踩坑清单</h2>
+  <div class="card warn" data-page-node-id="LTlJHHnct5Mu2WMyPNNeJh">
+    <table class="pit" data-page-node-id="tqgKwmqnxFjT1lkHBm53ts">
+      <tr data-page-node-id="UHZkPnd1yFSZA91Ec5IAYq"><th data-page-node-id="kbZh278gYNsge2mCaNE7nK">#</th><th data-page-node-id="1KZC3F3Aiqn4knXxw7PxOc">坑</th><th data-page-node-id="8wBrsnCjlKAMIBMt22RGPl">根治</th></tr>
+      <tr data-page-node-id="bHlmXHghhCNvkHhqsy3P6C"><td data-page-node-id="Sdqe0GsChNkBq1w5mqrWex">1</td><td data-page-node-id="doirMYqHxgLsBH38y0wCLJ">PythonWin 编辑器偷偷加 <code data-page-node-id="bzBC8kWddhC3EAsTJeeVTz">from pywin.debugger import fail</code>，import 失败静默退出</td><td data-page-node-id="l2PBiZg1yKwAtgfsTmTAU5">用 PyCharm 写，PowerShell 跑 <code data-page-node-id="eeDMDpplNzruTipIZJ8bcn">python 文件.py</code></td></tr>
+      <tr data-page-node-id="KL1PZzEytbEgE5WztYCAk3"><td data-page-node-id="lqz7eNSKCQxxVgzHgVFtYc">2</td><td data-page-node-id="Vv0v6H7l9jsxQ6arXUndOV">TODO 判定缺 else，<code data-page-node-id="ikXhH9VHGthwtyQsvnpFhG">[0.5,0.7)</code> 返回 None 被误判</td><td data-page-node-id="e5XsHsBIYYGF40PvOWu1yC">阈值判定兜底：<code data-page-node-id="YbKaXXslwOjKyMqMhaAOK3">&gt;=0.7 算 pass，其余 fail</code></td></tr>
+      <tr data-page-node-id="cnFmjPxpcToR7CE21eCSQs"><td data-page-node-id="eC4Ddf96UR8EtxdTO8kNzk">3</td><td data-page-node-id="ReJFFYSoyUpuG4u6p5wW1a">满分要警惕（送分题）</td><td data-page-node-id="ILl8YKwj4NfovPbTjdLgNl">加微妙用例，看成功率会不会掉</td></tr>
+      <tr data-page-node-id="c6Zt6NJQWJA7v3nnzRQ6e4"><td data-page-node-id="hXoPUSmqCbdJ1BwdoqHrjT">4</td><td data-page-node-id="4V6HCoEtIhj6r1n81QGO5t">单次结果不可信</td><td data-page-node-id="m5moPEt997CKXoMpDOxj8x">跑 N 轮取平均</td></tr>
+      <tr data-page-node-id="Ei29si6QJURc77KHacqKBE"><td data-page-node-id="FgxOzSmFVC54BCvJsAyjEC">5</td><td data-page-node-id="3MuD4MPas8fdDkHNednVyt">tool_calls 三层嵌套抠错</td><td data-page-node-id="TI9pvUAcGLH3EDqfYA7sm2">列表用 [0]、字典用 ["key"]，先 if 判断</td></tr>
+      <tr data-page-node-id="SMHTC4BVsTXIolKPkHycqj"><td data-page-node-id="AqVdtuGMv7qcUnA52KvrvQ">6</td><td data-page-node-id="hkx0cJcEp6MIfiqJVPN4jf">双击 .py 弹出 PythonWin</td><td data-page-node-id="xqD0t8hRDwA6UiH5h0vH3D">PowerShell 跑，或 PyCharm 点 ▶</td></tr>
+    </table>
+  </div>
+
+  <h2 data-page-node-id="nyWU0x5aBO9UCcbGW9mZK2">九、论文定位</h2>
+  <div class="card" data-page-node-id="PjVeNvlFdG6XfthlcTWofI">
+    <ul data-page-node-id="3OSswR7uprKAh1ZxC6BcwO">
+      <li data-page-node-id="okKU6hNfZQJfnDjsIzu1ij"><b data-page-node-id="DwB9P66PWn5fpU9HqEJptp">第 7 章实验的地基</b>：消融实验、量化指标全靠评测体系——"我做了一套评测集，3 轮取平均，结果可复现"。</li>
+      <li data-page-node-id="z8stJOV9vpJakSAQXxcFh4"><b data-page-node-id="1L7yuMQzExDa3TcdDFhGyl">简历硬通货</b>：能说出"我用评测集量化了 Agent 质量，而不是'我感觉还行'"。</li>
+      <li data-page-node-id="WAjbnWqmXnFCUWGjx68frm"><b data-page-node-id="Enyrph3SsawqT2GNjZSHfG">面试话术</b>：能答出"评测三件套""为什么满分要警惕""为什么跑 N 次取平均""tool_calls 是列表套字典套字典"。</li>
+    </ul>
+  </div>
+
+  <div class="footer" data-page-node-id="46M7hlVo5BnphtdIM26t2i">3.3 Agent 评测体系 · 详细版 · 2026-09-06 · 老周带学</div>
+</div>
+</body>
+</html>

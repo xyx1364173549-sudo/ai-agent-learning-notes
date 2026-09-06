@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="v9zZINAKWMDiHy0VCgMMz0">
+<head data-page-node-id="vU2XDYexawn1yG3F8uW4Vi">
+<meta charset="UTF-8" data-page-node-id="3aOGX32dziokYYhspngHbD">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" data-page-node-id="dkTsz9GiEPFeedEME26iVT">
+<title>3.2 Docker 容器化 · 学习笔记（详细版）</title>
+<style>
+:root{
+  --bg:#0d1117; --panel:#161b22; --panel2:#1c2230; --line:#2d333b;
+  --text:#e6edf3; --muted:#8b949e;
+  --blue:#58a6ff; --green:#3fb950; --orange:#d29922; --red:#f85149;
+  --purple:#bc8cff; --cyan:#39c5cf;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;line-height:1.75;padding:32px 20px 80px}
+.wrap{max-width:960px;margin:0 auto}
+header{border-bottom:2px solid var(--line);padding-bottom:20px;margin-bottom:28px}
+.tag{display:inline-block;background:rgba(88,166,255,.12);color:var(--blue);border:1px solid rgba(88,166,255,.3);border-radius:20px;padding:3px 14px;font-size:12px;letter-spacing:1px;margin-bottom:12px}
+h1{font-size:27px;margin-bottom:10px}
+.sub{color:var(--muted);font-size:14px}
+h2{font-size:20px;margin:38px 0 16px;padding-left:12px;border-left:4px solid var(--blue)}
+h3{font-size:16px;margin:22px 0 10px;color:var(--cyan)}
+p{margin-bottom:12px}
+.muted{color:var(--muted);font-size:13px}
+.key{color:var(--orange);font-weight:600}
+.key-g{color:var(--green);font-weight:600}
+.key-r{color:var(--red);font-weight:600}
+.key-b{color:var(--blue);font-weight:600}
+.quote{background:linear-gradient(90deg,rgba(88,166,255,.10),transparent);border-left:4px solid var(--blue);border-radius:0 8px 8px 0;padding:16px 20px;margin:18px 0;font-size:15px}
+.quote.warn{border-left-color:var(--red);background:linear-gradient(90deg,rgba(248,81,73,.08),transparent)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:20px;margin:16px 0}
+.card.warn{border-color:rgba(248,81,73,.4);background:rgba(248,81,73,.05)}
+.card.ok{border-color:rgba(63,185,80,.4);background:rgba(63,185,80,.05)}
+.card.tip{border-color:rgba(210,153,34,.4);background:rgba(210,153,34,.05)}
+table{width:100%;border-collapse:collapse;margin:14px 0;font-size:13.5px}
+th,td{border:1px solid var(--line);padding:8px 10px;text-align:left}
+th{background:var(--panel2);color:var(--blue);font-weight:600}
+td{background:var(--panel)}
+tr:nth-child(even) td{background:var(--panel2)}
+pre{background:#010409;border:1px solid var(--line);border-radius:8px;padding:16px;overflow-x:auto;margin:14px 0;font-family:Consolas,"Courier New",monospace;font-size:12.5px;line-height:1.6}
+code{background:rgba(110,118,129,.25);border-radius:4px;padding:2px 6px;font-size:12.5px;font-family:Consolas,monospace}
+pre code{background:none;padding:0}
+.flow{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0}
+.flow .step{flex:1;min-width:160px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.flow .step .n{display:inline-block;width:24px;height:24px;line-height:24px;text-align:center;background:rgba(88,166,255,.15);color:var(--blue);border-radius:50%;font-size:13px;font-weight:600;margin-bottom:8px}
+.flow .step .t{font-size:13.5px;font-weight:600;color:var(--text);margin-bottom:4px}
+.flow .step .d{font-size:12px;color:var(--muted)}
+ul,ol{padding-left:24px;margin:10px 0}
+li{margin:5px 0}
+.pit td:first-child{font-weight:600;color:var(--red)}
+.footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);font-size:13px;text-align:center}
+</style>
+</head>
+<body data-page-node-id="G38xJDN6oZV2KacDrkCwRv">
+<div class="wrap" data-page-node-id="JMJidFWFEk0l9eITJe5Po4">
+  <header data-page-node-id="UgTnS1xEVaPvFvOxSA1OeU">
+    <span class="tag" data-page-node-id="apWGpEUFDL0qGqXjhYEseG">阶段三 · Docker 容器化 · 详细版</span>
+    <h1 data-page-node-id="KGty91fykmXRMoBpzUVW3i">3.2 Docker 容器化</h1>
+    <div class="sub" data-page-node-id="AgBcRfbLbocOc7PqGe88h7">把"代码 + 环境"打包成标准箱子 → 一次打包处处运行 → 解决"我这儿明明是好的啊"</div>
+  </header>
+
+  <div class="quote" data-page-node-id="s98X5HQjoIsG8lk6TeC11b">
+    <strong data-page-node-id="2hOoa6uJbpcHyIsNLqCubE">Docker</strong> = 把"代码 + 运行环境（Python 版本 + 所有依赖包）"打包成一个<span class="key-b" data-page-node-id="EMlqqbu6LeoNTIpN0jy7Jm">自给自足的标准箱子（镜像 image）</span>，箱子到任何装了 Docker 的机器上都能 <code data-page-node-id="Bg443tOZpWaeGo9XdKy0al">docker run</code> 原样跑起来（容器 container）。它解决的是<span class="key" data-page-node-id="jAiFHh7PR179Y1cb3owbce">"环境地狱"</span>——一次打包、处处运行，代码跑在箱子自己的 Linux 里，跟宿主机的环境<span class="key-b" data-page-node-id="PaeqaAjHHVZH4Bq4n8aBik">彻底隔离</span>。
+  </div>
+
+  <h2 data-page-node-id="Haw0hxffh0kq56JL2hPrLH">一、痛点：换台电脑，环境就崩</h2>
+  <div class="card warn" data-page-node-id="FJXCqBBFrBcTPZ206sJHe2">
+    <table data-page-node-id="i8UMHCGf7EFGggryFCuDvI">
+      <tr data-page-node-id="vZbbJ1QSLcXhmdO2FDuuJO"><th data-page-node-id="gKQFmwBeDxhEDxqfKM9kai">没有 Docker 的世界</th><th data-page-node-id="WCY4vcoZtwAe9HsJXeYmhM">有了 Docker 之后</th></tr>
+      <tr data-page-node-id="ixGWNmLBTOnj8RirvmKhEK"><td data-page-node-id="KSRUkH5DzwyFlD0KbkrE9D">换机器要重装 Python、重配依赖、版本还可能对不上</td><td data-page-node-id="bwKNRbfToLXFfo7nXe5g8d">一行 <code data-page-node-id="IfwVktJHeI6FSxC9OesmDr">docker run 镜像名</code> 原地跑起来</td></tr>
+      <tr data-page-node-id="8D8akLLdBhPteSGnJz2x4s"><td data-page-node-id="QsA9LK30UiOF3NGj1DaakU">"我这儿明明是好的啊！"（环境不一致）</td><td data-page-node-id="oPBzuvHASgYNo5nICBMa7P">箱子自带环境，跑哪都一样</td></tr>
+      <tr data-page-node-id="Z6a1XAJZo0Jmzn0OnPcaPN"><td data-page-node-id="ovg7Vfk9AJEmcBU8pqyDHs">部署 / 给面试官演示 = 从头搭环境</td><td data-page-node-id="7TrWj1sFYK8HWHL0OeQWIL">把镜像给他，他 <code data-page-node-id="zY73VADstH2lm9sM3WoYwk">docker run</code> 就完事</td></tr>
+    </table>
+    <p class="muted" data-page-node-id="OoN4VVzpA8afahkESPynq6"><span class="key" data-page-node-id="EOO4Oa7PeQDDf0sR9eo4IE">类比</span>：以前是"带着你的厨房去别人家做饭"（到处装环境）；Docker 是"把整份做好的菜连锅端过去，开火即食"。</p>
+  </div>
+
+  <h2 data-page-node-id="9F5FDSW4OCkGqWqX3U3lew">二、Docker 三件套（用"编译"类比钉死）</h2>
+  <div class="card" data-page-node-id="jal8VaAFTxIDyUZ9A4jzhf">
+    <table data-page-node-id="pHrfyw98zR0gMgU4cvBwTV">
+      <tr data-page-node-id="30E3iHr5f8pulRRfWBeinu"><th data-page-node-id="cY6TDY5g1W13ODsjwUYyyB">Docker 概念</th><th data-page-node-id="bhKhGrwu9GJ8GSLcKUJ85W">你熟悉的类比</th><th data-page-node-id="RHtX9KEOfoT4YWAKlzOFgn">本质</th></tr>
+      <tr data-page-node-id="f3FNXnATqV33fZTUrcPqGR"><td data-page-node-id="vZSR4CuTsXhkpg5wdXhGNM"><b data-page-node-id="LNQWbkkNXv8AMRIjag5iEZ">Dockerfile</b></td><td data-page-node-id="EQw6qDtl4OQBJA54vDltGk">源码（.c 文件）</td><td data-page-node-id="A4I5PIXDkfI60IEOhYyRS6">文字说明书：用什么底子、装什么、跑什么</td></tr>
+      <tr data-page-node-id="B4yhcQS7ZhCLCWbNElAf3b"><td data-page-node-id="95ent9VZ6N5oU7piYJDKOc"><b data-page-node-id="xZKbVtozKmoCqUMZ6H8lGk">镜像 Image</b></td><td data-page-node-id="dJkIvHGEPSFYkqKdkMbpSt">可执行文件（.exe）</td><td data-page-node-id="7WSPDcdQYzWpWOgQqhrfL9">build 出的<b data-page-node-id="u5rHv0DQXUy4zBrLvraHt3">只读成品</b>，不可改、可复制千万份</td></tr>
+      <tr data-page-node-id="44rWsFIY37f6A63XMCRZPK"><td data-page-node-id="FXIHOysbyacW7Cu2Ijsr6A"><b data-page-node-id="KShVCJKESnpBnQ1D8d0yXj">容器 Container</b></td><td data-page-node-id="CkvWoFaCssFMIvts7afpRd">双击 exe 后<b data-page-node-id="CdCVdZ3dJOE4s8GspWBkKv">跑起来的进程</b></td><td data-page-node-id="jyp2UM1XEE4FGI1m7DBv38">镜像"运行"出的实例，能启能停、能同时跑多个</td></tr>
+    </table>
+    <div class="flow" data-page-node-id="kxu9TDUvEbyoEZ2KNI6tKs">
+      <div class="step" data-page-node-id="FDWylVBfoj3NHHuTIDexVo"><div class="n" data-page-node-id="xGZmHMBPz9eGE4TWD0jqBT">1</div><div class="t" data-page-node-id="rzwFR2SqXLEheTiUVa96XE">Dockerfile</div><div class="d" data-page-node-id="eJdDXQAtIUlh0doyviCtbB">源码 / 说明书</div></div>
+      <div class="step" data-page-node-id="FWLONCrIMIYmsqkxmxxH4p"><div class="n" data-page-node-id="oFP6VslE9Cj1FLtPJydoDo">2</div><div class="t" data-page-node-id="GOanBho54j5mhnXBlKv52k">docker build</div><div class="d" data-page-node-id="q6QHdeHpUEIGNUAtpxUSwZ">编译成镜像</div></div>
+      <div class="step" data-page-node-id="rR5ei9uicQDQFLECUYVvii"><div class="n" data-page-node-id="eekUZsCnN38oA9hHb81M9q">3</div><div class="t" data-page-node-id="LkWEhVFzJMc5N0tTYnbtvA">镜像 Image</div><div class="d" data-page-node-id="HyBOI9YMMMHKAbjWr2Vt10">可执行文件</div></div>
+      <div class="step" data-page-node-id="hEtCVPKVC5DBZsPFT0RO1m"><div class="n" data-page-node-id="cyPq3xLwMH2eMjy2dTbSO2">4</div><div class="t" data-page-node-id="h7Mwl1losgq7l24pkX0klD">docker run</div><div class="d" data-page-node-id="Xz30LVqEjV1TWuydhfEKu7">启动</div></div>
+      <div class="step" data-page-node-id="8wuPcYlozWmqBH0f8X8pS6"><div class="n" data-page-node-id="LLKBPjFwCfsO1yGK3JF4kQ">5</div><div class="t" data-page-node-id="g0hBhvtkRUitq8LlIAr96u">容器 Container</div><div class="d" data-page-node-id="WVZVhRW4FZ2M41I8YFfcLl">进程</div></div>
+    </div>
+    <p class="muted" data-page-node-id="zn8CRzGLCf0WahrP2Oibck"><span class="key-b" data-page-node-id="M7GbSAo4e9OxJBQBm8p29n">面试必考</span>：镜像和容器 = <b data-page-node-id="IH8eHDM0WeiU8ZJjeJxqf0">程序 vs 进程</b>。同一个 .exe 能开 100 个窗口，同一个镜像也能跑 100 个互不干扰的容器。</p>
+  </div>
+
+  <h2 data-page-node-id="SOzkzGBG7FEYWsc6fwbKFA">三、Dockerfile 的四条核心指令（本节"知识点"本体）</h2>
+  <div class="card" data-page-node-id="VoYxgCEXVX9qqt3SkD8t80">
+    <table data-page-node-id="XhisuT46A4ErTQbGRUZHZu">
+      <tr data-page-node-id="2reNcC6AZDp2WERcDvNaB9"><th data-page-node-id="Sp6BFebSCNXJMKsbjCJ97F">指令</th><th data-page-node-id="bzGBui6GN29RDj4ZGwZLJm">作用</th><th data-page-node-id="u4BqYsMpyF5T1nInfiTeBg">类比</th></tr>
+      <tr data-page-node-id="gXu9Txzk6XwoDZgqu28YyS"><td data-page-node-id="i98TMa1aSaqrkwLABkcoB1"><code data-page-node-id="jkCrzKAn55zC1IqIrIzgoD">FROM</code></td><td data-page-node-id="vEZODdYgrXmxcdicF1wftC">指定<b data-page-node-id="hI7LgCu0GVNx92199dD5C0">底子</b>（基础镜像）</td><td data-page-node-id="QqRq5boel906W6SZbYkXfQ">"房子盖在什么地基上"——<code data-page-node-id="2eoEnoeXWeEVWVko6QAycr">python:3.13-slim</code> = 自带 Python 3.13 的干净 Linux</td></tr>
+      <tr data-page-node-id="qiWRCax7SENC0WYHshDH7Y"><td data-page-node-id="EwdFTfhmmLP8IXbVTP309P"><code data-page-node-id="u5XCaNc1RBMYIJfUBR9BIO">WORKDIR</code></td><td data-page-node-id="zJoYrDYzeB8MwxdDiOoLE5">容器内<b data-page-node-id="CUn5AA89EIEeif7E0ZcQ71">工作目录</b></td><td data-page-node-id="AUhGx4Kapb8pxMcpbK63vX">"进屋后默认站哪个房间"</td></tr>
+      <tr data-page-node-id="9mTKB0Z0MBWxruNMB0haZY"><td data-page-node-id="H93YNmdJuIpjONoL9ksBRG"><code data-page-node-id="67aKLpuqk4tM9rhQ1rq6bY">COPY</code></td><td data-page-node-id="DGRm58FEZuPmroycFseCvl">把电脑文件<b data-page-node-id="5pEp9v0BSsCuS865JFrDZP">塞进</b>镜像</td><td data-page-node-id="52YOplRD6FTLdX8jw5ggyn">"把我电脑里的东西搬进房子"</td></tr>
+      <tr data-page-node-id="XA2N5RXYstC2dHWA1ON8yD"><td data-page-node-id="j25g7gftHHf8CNsDrMR2MN"><code data-page-node-id="7VdfMAHKB7TMImyAaOaxHc">CMD</code></td><td data-page-node-id="wIF1e9Obbj2zKWybnUz6Ps">容器<b data-page-node-id="iUCZ9NRQxjStdwQulnuCnH">启动后跑什么</b></td><td data-page-node-id="bDyMFqFHP9J2YYYBQYtZKq">"入住后第一件事干什么"</td></tr>
+    </table>
+    <p class="muted" data-page-node-id="8VlHRC86LslBaBiwlHinHu"><span class="key" data-page-node-id="SCjhkvjWu0L2lwiSQT1clv">顺序逻辑（背下来）</span>：先选地基（FROM）→ 定站位（WORKDIR）→ 搬东西（COPY）→ 定好入住干什么（CMD）。</p>
+<pre data-page-node-id="q4PYyY3g1DWb3EJFa7WDo2"><code data-page-node-id="RN1MB3pP8okqvD0PB4MjCI">FROM python:3.13-slim   # ① 地基：自带 Python 的干净 Linux（不是你 Windows！）
+WORKDIR /app            # ② 工作目录：容器里的"当前文件夹"
+COPY app.py .           # ③ 搬东西：把你的代码复制进 /app
+CMD ["python","app.py"] # ④ 启动后干什么：运行这个脚本</code></pre>
+  </div>
+
+  <h2 data-page-node-id="eC67lN05kv39Kb1BQLW2V9">四、两个核心命令</h2>
+  <div class="card" data-page-node-id="BewvzHdCH87R7LvVHXHS1C">
+<pre data-page-node-id="RMietSFFDxGykcFm8ZxN6c"><code data-page-node-id="yoYZtQuAYnLh3H2I2uCJdR">docker build -t my-first-app .   # 读 Dockerfile → "编译"成镜像（-t 起名，. 表示 Dockerfile 在当前目录）
+docker run my-first-app          # 用镜像"启动"一个容器（执行 CMD）</code></pre>
+    <p class="muted" data-page-node-id="dUtTq9R2wYrMGy0ABGjP2x">build 成功会看到 <code data-page-node-id="y8eUIVk40r3GoTAOC9LX4b">=&gt; naming to docker.io/library/my-first-app:latest</code>；run 就执行你 CMD 里写的那件事。</p>
+  </div>
+
+  <h2 data-page-node-id="M57G8cTu4IhGQf5YvLhQxz">五、⭐ 层缓存机制（这次亲眼看到的 CACHED）</h2>
+  <div class="card ok" data-page-node-id="Sr0PJcoXKDkr3ZjZM5250V">
+    <p data-page-node-id="wwcsVgKcA3GdCJOCBc38DY">第二次 build 时出现：</p>
+<pre data-page-node-id="ephfWNB4QUL4s3DDQFVLAI"><code data-page-node-id="NftRPI18IEj1OK8Y7Z68ZU">=&gt; CACHED [2/3] WORKDIR /app      0.0s</code></pre>
+    <p data-page-node-id="P2pELIWQXqElAb13kJSsqa"><code data-page-node-id="mXKcYIf2Qyo1ubQtl2GduI">CACHED</code> = <b data-page-node-id="KZYMSQdfl2JzXa4tVYrT1m">用了缓存</b>。Dockerfile 的<b data-page-node-id="2t93db8F3fKJbaq688bJEQ">每一行是一个"层"</b>，构建时：</p>
+    <ul data-page-node-id="BDzTbNMNYqj1UKCm5S4KzJ">
+      <li data-page-node-id="B4AnFq3MGQoaqfBQh2yGSe">某层内容<b data-page-node-id="DqKD7gs9nLDhH4MZm1LQ66">没变</b> → 直接拿上次缓存，<b data-page-node-id="P3l8GfqP92kszj0WAUEcfE">不重做</b>（省时）</li>
+      <li data-page-node-id="RyET7Yh5WjFquA5k25zYsu">某层<b data-page-node-id="Gi1AupNDo8mU5vdMY2SCIM">变了</b>（比如改了 app.py，COPY 那层就变）→ 该层及之后才重做</li>
+    </ul>
+    <p class="muted" data-page-node-id="M5oiiIUNKMSr1tMz9o6euz">这就是"改一行代码，重新 build 只要 1 秒"的原因。面试常问"为什么 build 那么快"——答案就是层缓存。</p>
+    <p><b>机制再拆细一点（逐层对指纹）</b>：每一层都算一个"指纹（hash）"，下次 build 时逐层对比：</p>
+    <table>
+      <tr><th>层</th><th>变了没</th><th>结果</th></tr>
+      <tr><td>FROM（基础镜像）</td><td>没变</td><td>✅ CACHED 复用</td></tr>
+      <tr><td>WORKDIR</td><td>没变</td><td>✅ CACHED 复用</td></tr>
+      <tr><td>COPY（代码）</td><td>改了 app.py</td><td>❌ 重做</td></tr>
+      <tr><td>CMD（在 COPY 后）</td><td>在变层之后</td><td>❌ 跟着重做</td></tr>
+    </table>
+    <p>所以"快"的本质是 <b>增量构建</b>——只重做"变动的层及其之后"，前面的大头（拉基础镜像、装依赖）全命中缓存。计科视角：这就是<b>增量编译</b>（没改的 .c 不重新编译，只编译改过的 + 重新链接）。</p>
+    <p><b>工程技巧（面试加分）</b>：既然"变的层及之后全重做"，就把<b>最不易变的放前面、最易变的放后面</b>：</p>
+<pre><code>FROM python:3.13.12-slim
+WORKDIR /app
+COPY requirements.txt .             # ① 先 COPY 依赖清单
+RUN pip install -r requirements.txt # ② 装依赖（最慢，但最不常变）
+COPY . .                            # ③ 最后才 COPY 代码（最常变）
+CMD ["python","app.py"]</code></pre>
+    <p>为什么 <code>requirements.txt</code> 要<b>单独 COPY、放在代码前</b>？因为 <code>pip install</code> 最耗时，若和代码一起 COPY，你每改一行代码都要重装一遍依赖。单独让它占一层 → <b>改代码时"装依赖"那层命中缓存，不重装</b>。</p>
+  </div>
+
+  <h2 data-page-node-id="EJKPLdiGinY6oBZHME1dpT">六、⭐ 环境隔离（3.2 的第一性原理）</h2>
+  <div class="card" data-page-node-id="T158W7hWJxdiNx0QcZadAl">
+    <p data-page-node-id="PBLKcT5aHuus2jFUFFsFO6"><code data-page-node-id="LmlTPeuXmJYg9l3cuUyyBG">docker run</code> 打印出：</p>
+<pre data-page-node-id="aZv2117ulp00HIjIC7OseD"><code data-page-node-id="1YZucDjnpQbSBM8dxvAdEh">我在容器里运行！
+Python 版本：3.13.15
+操作系统：  Linux 6.18.33.2-microsoft-standard-WSL2</code></pre>
+    <p data-page-node-id="G004BeY4XdZx6pJKAodga1">三个铁证证明"代码跑在容器里，不是跑在 Windows 上"：</p>
+    <table data-page-node-id="4Ya6mQiy501Bx6quRDkwHL">
+      <tr data-page-node-id="Ap8odutRWno5lezeE1o2s4"><th data-page-node-id="tljFEZMsEpFfsITgeePxNC">输出</th><th data-page-node-id="WRl2eOUEgBWnTFa2BOGIA2">证明</th></tr>
+      <tr data-page-node-id="GdiSvtXqKRu1TGb0jl9hiq"><td data-page-node-id="PMp9lE6teSLxtJcP2Hyn3J"><code data-page-node-id="N2K0rYfX0AZdjtawcWZdHc">操作系统：Linux ...WSL2</code></td><td data-page-node-id="mDn3h9jWeIe3ZEySER0FR4">你电脑是 Windows，但代码跑在 Linux 容器里</td></tr>
+      <tr data-page-node-id="mtXUNA5uPaIinRcdeFviOV"><td data-page-node-id="XDAbPawwQacwnctygs5zbc"><code data-page-node-id="HLFvr9ARun9Q4UliIHh7fV">Python 版本：3.13.15</code></td><td data-page-node-id="HxbCWqWHvthN5Jce7xz5N6">不是你电脑的 Python，是 <code data-page-node-id="Dtsi3GRnwmqC7tBouniZkw">python:3.13-slim</code> 镜像自带的</td></tr>
+      <tr data-page-node-id="Sd6fSof3RYSemZzcB2hV9V"><td data-page-node-id="rOMPvDo6HwQOqBPT3hahex">报错路径 <code data-page-node-id="KjIe3FdpA5JTIsOl58hBfU">/app/app.py</code></td><td data-page-node-id="VrKsFUd5TVf64psxicPVoy">容器内部路径，不是 <code data-page-node-id="hjPx8u8KIHYz63H4f2GTws">C:\Document\...</code></td></tr>
+    </table>
+    <div class="quote" data-page-node-id="H2ZzpOcGFW1iWPk2akJfBJ">
+      <strong data-page-node-id="A2PUBLgH2KoAA4MYTobBz7">一句话钉死</strong>：Docker 把"代码 + 环境"打包成自给自足的箱子，run 的时候箱子自己带环境跑，跟宿主机（你电脑）<span class="key-r" data-page-node-id="AAgHkhg3HfDyBVcLAmHp8f">彻底隔离</span>。所以到任何机器都原样跑，不再有"环境不一致"的坑。
+    </div>
+  </div>
+
+  <h2 data-page-node-id="EcNrY3iCFPIhkbvI8ap00R">七、WSL2 后端：为什么 Docker 看不见你的 Windows 代理</h2>
+  <div class="card tip" data-page-node-id="mAb0DBF9LudcNsODt1yaDX">
+    <p data-page-node-id="oLYpBBiUQBLN9u3d5aaTBn">Docker Desktop 的引擎跑在 <b data-page-node-id="Mbg3gaUVYsqjKxDrbGZdHF">WSL2 的 Linux 虚拟机</b>里，它有<span class="key" data-page-node-id="VAfdfLSLnYjw1zwjSXJZPR">独立的网络环境</span>，跟你 Windows 是两个世界。所以：</p>
+    <ul data-page-node-id="zaSvpcZBQgBPLACpB3A1gp">
+      <li data-page-node-id="LuGyfBg1Bthsgi45mnybaU">你 Windows 上开的 Clash 系统代理，<b data-page-node-id="AHozCw4mMQ48T7PVBerbDb">管不到虚拟机里的 Docker</b></li>
+      <li data-page-node-id="3VAlqEolhIw0NM56fCb9Mr">必须<b data-page-node-id="tgnGO7R9eJKxe47nrjNFQ4">单独给 Docker Desktop 配代理</b>（Settings → Resources → Proxies 填 <code data-page-node-id="nw9wwm6mEyd0Pc6dGnSEbu">http://127.0.0.1:7897</code>）</li>
+      <li data-page-node-id="6ayc2FPcnmMJ3uX65ZbmJM">或配<b data-page-node-id="H3dY75bFk6yPxf0i1RTItv">镜像加速器</b>（Docker Engine 里加 <code data-page-node-id="rfTvhEHIsYwMxC67C2XrSy">registry-mirrors</code>）</li>
+    </ul>
+    <p class="muted" data-page-node-id="KNPSKBwO9KEMG0A68O9aPG">这是国内拉 Docker Hub 镜像最经典的坑。</p>
+  </div>
+
+  <h2>七·追问深化（三个高频面试追问）</h2>
+
+  <h3>① .venv vs Docker：一个管"写"，一个管"跑"</h3>
+  <div class="card">
+    <p>两者<b>不冲突、不替代</b>，是流水线上的两站：</p>
+    <table>
+      <tr><th></th><th>写代码（开发）</th><th>跑代码（部署）</th></tr>
+      <tr><td><b>在哪</b></td><td>你的电脑（Windows）</td><td>容器（Linux）</td></tr>
+      <tr><td><b>用什么</b></td><td>PyCharm + 本地 Python + .venv</td><td>镜像自带 Python + Linux</td></tr>
+      <tr><td><b>靠谁统一环境</b></td><td>requirements.txt</td><td>Docker 镜像</td></tr>
+    </table>
+    <p><code>.venv</code> + requirements.txt → 统一"开发时写什么版本"；Docker → 统一"运行时用什么环境"。</p>
+    <p class="muted"><span class="key">类比</span>：.venv 是"调料清单"（写清要哪些料，但每人还得自己买）；Docker 是"把做好的菜连锅打包"（锅和料都装好，端过去就吃）。</p>
+    <div class="quote warn">
+      <strong>Docker 主要管"跑"，不管"写"</strong>：写代码时你人在电脑上，靠 PyCharm 的补全/调试（认本地 Python）；跑代码时才轮到 Docker。所以"拉同一个镜像写代码"不是主流做法，真正实现它的是进阶玩法 <b>Dev Container</b>。
+    </div>
+  </div>
+
+  <h3>② 镜像 = 通用基础 + 你的定制层（"拉取"拉的是什么）</h3>
+  <div class="card">
+<pre><code>你的镜像 = 基础镜像(通用毛坯) + 你的代码/依赖(COPY/RUN 叠加)</code></pre>
+    <ul>
+      <li>从 Docker Hub 拉取的 <code>python:3.13-slim</code> 是<b>通用基础镜像</b>（人人一样的"装了 Python 的干净 Linux"），<b>不是为你定制的</b></li>
+      <li><code>docker build</code> 时，在它之上 <code>COPY</code> 代码、<code>RUN</code> 装依赖，才烧出<b>属于你的新镜像</b> <code>my-first-app</code></li>
+    </ul>
+    <p><b>"拉取"（pull）= "下载"</b>：镜像存在云端仓库（Docker Hub），build/run 时下载到本地，这个下载动作就叫"拉取"。</p>
+    <p class="muted"><span class="key">类比</span>：基础镜像是开发商统一盖的<b>毛坯房</b>（人人一样），你 build 是在毛坯上<b>装修</b>，装修完的 <code>my-first-app</code> 才是你的<b>定制精装房</b>。</p>
+  </div>
+
+  <h3>③ tag 死活与三层锁版本（为什么本地能跑、容器可能挂）</h3>
+  <div class="card warn">
+    <p><b>隐患</b>：你本地 Python 3.13.12，但 <code>FROM python:3.13-slim</code> 拉下来是 3.13.15——版本不一样，本地能跑的代码打包后可能报错。</p>
+    <p><b>根源</b>：<code>python:3.13-slim</code> 这个 tag 是<b>浮动的</b>（="3.13 系列最新版"），会漂移；而你<b>拉下来的那份镜像</b>是<b>死的</b>（固定的）。"没报错"只是运气好（补丁版本兼容），正确做法是<b>锁死版本</b>：</p>
+    <table>
+      <tr><th>层</th><th>做法</th><th>示例</th></tr>
+      <tr><td>基础镜像</td><td>精确到版本号</td><td><code>FROM python:3.13.12-slim</code></td></tr>
+      <tr><td>依赖包</td><td>pip freeze 导出精确版本</td><td><code>langchain==0.2.14</code></td></tr>
+      <tr><td>极致（加分）</td><td>用 digest 锁到具体构建</td><td><code>FROM python@sha256:9d2e...</code></td></tr>
+    </table>
+    <div class="quote">
+      <strong>一句话</strong>：Docker 给了你"可复现"的能力，但要不要复现、复现成什么样，取决于你锁不锁版本。
+    </div>
+  </div>
+
+  <h2 data-page-node-id="mF18bGKA2cQxtvSl9PdNZ8">八、测试验收</h2>
+  <div class="card ok" data-page-node-id="JRNoKf0MD1dIqcyRaenKEO">
+    <ul data-page-node-id="9mON4V1MLJMtTFZ9rUaNby">
+      <li data-page-node-id="g7f1VHFVvVxLlnVFsM9fT5">✅ <b data-page-node-id="nSJc18eKxDgqwc22vvyUs1">环境通</b>：<code data-page-node-id="Apwlis96MqgidzK3ViO5eT">docker --version</code> 出 29.7.2，<code data-page-node-id="64vIST9GN5lQ3TZSoCtscx">docker run hello-world</code> 出 Hello from Docker!</li>
+      <li data-page-node-id="vp5WKwYHTzzJSQGmYxhpso">✅ <b data-page-node-id="bchWPj3oeGtURsBHGJudve">build 成功</b>：看到 <code data-page-node-id="SY1qD0pzbq8j3h1rx3H0OQ">naming to docker.io/library/my-first-app:latest</code></li>
+      <li data-page-node-id="r8fP1zVfTgVcqcwLUSQr62">✅ <b data-page-node-id="TLdIApIkhgCfHHsDZcOiNw">run 输出证明隔离</b>：操作系统是 Linux 不是 Windows，Python 版本不是你电脑的</li>
+      <li data-page-node-id="0N5pldWSHequA9QJ0oe32S">✅ <b data-page-node-id="egd6dMGxoh8uh8Dz0pQHO9">改代码要重新 build</b>：改 app.py 后重新 build 再 run 才生效（镜像一次性固化）</li>
+    </ul>
+  </div>
+
+  <h2 data-page-node-id="mDpfjujPHNeIawD1snsS95">九、踩坑清单（Docker 实操坑大合集）</h2>
+  <div class="card warn" data-page-node-id="mdUrmIZyFHnLOUND8YTJhl">
+    <table class="pit" data-page-node-id="weoEf9jI3MfXFUajwXCfId">
+      <tr data-page-node-id="acr4VqcRE21l0PNoqzvgQK"><th data-page-node-id="b1hR9b4kdrjnFdTW3KhTce">#</th><th data-page-node-id="oHxhy0c3yPfhwwtg0aTkqg">坑</th><th data-page-node-id="LybtkAUpFSjTWFY6l4NQLo">表现</th><th data-page-node-id="PltzWzvmsXuo8ZI2JwngT4">根治</th></tr>
+      <tr data-page-node-id="EOlvj9OC9l8x1bbmcCfCwF"><td data-page-node-id="qXSDE9RuTmAPHA5KWOqxLo">1</td><td data-page-node-id="G74o07lBVbyC8gvR7nzcfY">Docker Desktop 没启动</td><td data-page-node-id="tvRAEZ1eWI1DONfVcRYCOn"><code data-page-node-id="nAxttaVRWvs4lO0DYDjCOc">failed to connect to docker API ... cannot find the file</code></td><td data-page-node-id="EoOanozaw1wmbNaWEEjVU5">先开 Docker Desktop，等鲸鱼转绿（<code data-page-node-id="d4AFFnSk6V1fWv6hDcohKS">docker version</code> 的 Server 段有版本号才算通）</td></tr>
+      <tr data-page-node-id="nkuUI6BK89zDhC0aJRjSiq"><td data-page-node-id="JyRVMsqmFVpLAtxy9QpSRq">2</td><td data-page-node-id="TDtn04fC6bCqg3TAzWNyFh">Docker Hub 直连超时（国内墙）</td><td data-page-node-id="hA6lMmc7innGphzd9N5cy9"><code data-page-node-id="EhgX8U9co6qDSAMLMOoso4">connectex ... registry-1.docker.io:443</code></td><td data-page-node-id="nGMpAFqviCuLI4uPhnDwTe">配代理或镜像加速器</td></tr>
+      <tr data-page-node-id="xFDm4tAxEKghVC4YXE8sjF"><td data-page-node-id="yjV0McqR1wIu82NUKy7rTT">3</td><td data-page-node-id="rPILTClZIcptaBrRS8qyKP">Docker 不走系统代理</td><td data-page-node-id="cjenUZ8W7X5bSJuIW65RuE">Clash 开着还是拉不动</td><td data-page-node-id="gQ67Gbw3l95BHn8yJLwMVC">WSL2 独立网络，得单独给 Docker Desktop 配代理</td></tr>
+      <tr data-page-node-id="mWUoUBfy9gDfze14KP0Hdq"><td data-page-node-id="tYKphb0ahXX5f1FUuvdzpI">4</td><td data-page-node-id="LZns5A5CVsWwkaVHNH1o5q">DaoCloud 加速器白名单</td><td data-page-node-id="aLwdm6wNFg2vW22lJD31bh"><code data-page-node-id="FJymh4GANExU71mpK3GSCT">这镜像不在白名单</code></td><td data-page-node-id="eroYKqtGwC4TSM01uMGhoO">自定义镜像 build 成功即可，run 用本地镜像不触发拉取</td></tr>
+      <tr data-page-node-id="Z228Wsk3JYFWkEZO4CM2eF"><td data-page-node-id="PbEviGKHc34YfRReNBsjOB">5</td><td data-page-node-id="h442JXLRRQ0qHbbLJ7DF07">cd 错目录</td><td data-page-node-id="C0Tic6uZXD6vSpNOzjkWyB"><code data-page-node-id="2ZwVZqfS2t1hbOl2johwvF">open Dockerfile: no such file or directory</code></td><td data-page-node-id="1IHm6CgGR2iCxJI6nir9Ns">先 cd 到有 Dockerfile 的目录</td></tr>
+      <tr data-page-node-id="2ORvWDqC7O8nwsga3YeOSO"><td data-page-node-id="MvLKVCnSl3JNOEPj8FYmw8">6</td><td data-page-node-id="dyRtVaauKLiWYDWJzRREjG">中文引号撞三引号</td><td data-page-node-id="fbQfU7paLReH4RwU1xBMIy"><code data-page-node-id="I5g7awWLvq53KkAZLvqYz4">SyntaxError: unterminated string literal</code></td><td data-page-node-id="AV8lmJHiifGZi57cJrJwPQ">docstring 里别内嵌中文双引号</td></tr>
+      <tr data-page-node-id="06FeAAIQEZQjmfHothh9jE"><td data-page-node-id="xmLXwmKglijevN6GHlft7U">7</td><td data-page-node-id="NKHXOE7slmDzYeh8f9H3e4">改了代码不重新 build</td><td data-page-node-id="7ieju1JtHcwIRlDO5bwX1K">run 出来还是旧结果</td><td data-page-node-id="bAtz889AVZr5ifkKHKCiYQ">镜像一次性固化，改源码必须重新 build</td></tr>
+      <tr data-page-node-id="0JvimWiYL8IEki1B75AedO"><td data-page-node-id="15FyU6Pv4czLgpM1UyC7cY">8</td><td data-page-node-id="ARsKJs5v1yEr1zTJ369bER">镜像名拼错</td><td data-page-node-id="HIqH62xaq9zQCDlOMOcg7W">build 叫 frist、run 找 first</td><td data-page-node-id="UuQF2wo9ozb3kkOKWimUmM">build 和 run 用同一个名字</td></tr>
+    </table>
+  </div>
+
+  <h2 data-page-node-id="15MDQCfy2O2tQjn7LBjgSo">十、论文定位（答辩话术）</h2>
+  <div class="card" data-page-node-id="xbl4w8cyWYSTKPY6F8OWWO">
+    <ul data-page-node-id="EF1bPXjHOf4h06wnNqBBkx">
+      <li data-page-node-id="7VP24KroduSQH1n6LmqPWK"><b data-page-node-id="yAmJ9MDmcGifs6AUtnjrT2">第 6 章 RAG 服务可 Docker 化部署</b>：把学习伴侣的 RAG 检索 / 记忆系统包成镜像，<code data-page-node-id="JeqZKZJcybgMYhmC7F7O3f">docker run</code> 一键起服务——"系统可复现、可交付"的工程实证。</li>
+      <li data-page-node-id="nLp3sEgR7dyeAl6iA0CyCd"><b data-page-node-id="HZZpjZikWXxibkiTl5VMB7">工程化亮点</b>：会用 Docker 打包镜像 = <span class="key-g" data-page-node-id="hgx1g8GnFIuKkZTVhTrssm">简历硬通货</span>（大厂 Agent 应用岗都要求"能容器化部署"）。</li>
+      <li data-page-node-id="WxzK3rPwOqu0BeBOduewnz"><b data-page-node-id="a45Xwvk2uewJw0CWYLSPC9">面试话术</b>：能说出"镜像=程序、容器=进程，会写四行指令，懂层缓存，踩过国内拉镜像的代理/加速器坑"——证明你能<b data-page-node-id="Cd77NtKmgzDL45Cv9q42Xh">交付可运行系统</b>，不是只会写 demo。</li>
+    </ul>
+  </div>
+
+  <h2 data-page-node-id="dGYwiMA5YJBdDnTAGhGTHX">十一、代码骨架速查</h2>
+  <div class="card" data-page-node-id="du3FayetXeK9DDJEL9qp1d">
+<pre data-page-node-id="cHTMTuK7ofReIHIk2KfxX5"><code data-page-node-id="o1AINz885gEWlnBdDnHJKV"># Dockerfile —— 打包说明书（四行指令）
+FROM python:3.13-slim   # ① 地基：自带 Python 的干净 Linux
+WORKDIR /app            # ② 容器内工作目录
+COPY app.py .           # ③ 搬代码进去
+CMD ["python","app.py"] # ④ 启动后干什么</code></pre>
+<pre data-page-node-id="FD8HRy408ivdY8mpFDoDkr"><code data-page-node-id="pvWfg3VSlEZgygzMPC0DLL"># app.py —— 被 Docker 打包运行的最小例子
+import sys, platform
+print(f"Python 版本：{sys.version.split()[0]}")
+print(f"操作系统：  {platform.system()} {platform.release()}")</code></pre>
+<pre data-page-node-id="nDuuD3T3zOyLLCzFCMKCDe"><code data-page-node-id="z1KtmcEFQuf6zU6DzQyIVc"># 两条命令走完 Docker 全流程
+docker build -t my-first-app .   # Dockerfile → 镜像
+docker run my-first-app          # 镜像 → 容器</code></pre>
+    <p class="muted" data-page-node-id="CQo8ktfocdyCJH9HmEbSWq">完整例子：<code data-page-node-id="YoA2e2f5eF29KGti5Z74tf">agent_project/docker_demo/app.py</code>、<code data-page-node-id="tuTiqUHQFHUSXQIR75PUMX">agent_project/docker_demo/Dockerfile</code></p>
+  </div>
+
+  <div class="footer" data-page-node-id="dDxrIE7PvG8HRukn0pvnhj">3.2 Docker 容器化 · 学习笔记（详细版）· 2026-09-06</div>
+</div>
+</body>
+</html>
